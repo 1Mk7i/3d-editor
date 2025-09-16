@@ -38,7 +38,31 @@ export default function Home() {
         title='Left Menu'
         children={<div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <Button label='Create' onClick={() => sceneManager.addObject(createNewMesh())} />
-          <Button label='Edit' onClick={() => alert('Edit mode enabled')} />
+          <Button 
+            label={sceneManager.isEditMode ? 'Exit Edit' : 'Edit'} 
+            onClick={sceneManager.toggleEditMode}
+            style={{ backgroundColor: sceneManager.isEditMode ? '#ff6b6b' : '#4ecdc4' }}
+          />
+          {sceneManager.isEditMode && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginLeft: '10px' }}>
+              <small style={{ color: '#666' }}>Transform Mode:</small>
+              <Button 
+                label='Move' 
+                onClick={() => sceneManager.setTransformMode('translate')}
+                style={{ backgroundColor: sceneManager.transformMode === 'translate' ? '#ffe66d' : '#ddd' }}
+              />
+              <Button 
+                label='Rotate' 
+                onClick={() => sceneManager.setTransformMode('rotate')}
+                style={{ backgroundColor: sceneManager.transformMode === 'rotate' ? '#ffe66d' : '#ddd' }}
+              />
+              <Button 
+                label='Scale' 
+                onClick={() => sceneManager.setTransformMode('scale')}
+                style={{ backgroundColor: sceneManager.transformMode === 'scale' ? '#ffe66d' : '#ddd' }}
+              />
+            </div>
+          )}
           <Button label='Delete' onClick={() => {
             if (sceneManager.selectedObjectId) {
               sceneManager.removeObject(sceneManager.selectedObjectId);
@@ -55,6 +79,8 @@ export default function Home() {
     selectObject={sceneManager.selectObject} 
     selectedObjectId={sceneManager.selectedObjectId} 
     clearSelection={sceneManager.clearSelection}
+    isEditMode={sceneManager.isEditMode}
+    transformMode={sceneManager.transformMode}
   />
       <ContextMenu
         isVisible={contextMenu.isVisible}

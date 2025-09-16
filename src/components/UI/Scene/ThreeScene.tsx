@@ -15,9 +15,11 @@ type ThreeSceneProps = {
   selectObject: (id: string) => void;
   selectedObjectId: string | null;
   clearSelection: () => void;
+  isEditMode: boolean;
+  transformMode: 'translate' | 'rotate' | 'scale';
 };
 
-const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection }: ThreeSceneProps) => {
+const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode }: ThreeSceneProps) => {
   const { camera, gl } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
@@ -78,9 +80,10 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection 
     <>
       <ambientLight intensity={0.5} />
       <directionalLight position={[2, 2, 2]} intensity={0.8} />
+      <gridHelper args={[20, 20, 'gray', 'lightgray']} />
       {objects.map(obj => (
         obj.id === selectedObjectId ? (
-          <TransformControls object={obj.mesh} key={obj.id} mode="translate">
+          <TransformControls object={obj.mesh} key={obj.id} mode={isEditMode ? transformMode : 'translate'}>
             <primitive object={obj.mesh} />
           </TransformControls>
         ) : (
@@ -92,7 +95,7 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection 
   );
 };
 
-const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection }: ThreeSceneProps) => {
+const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode }: ThreeSceneProps) => {
   return (
     <Canvas style={{ width: '100vw', height: '100vh' }}>
       <SceneContent 
@@ -100,6 +103,8 @@ const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection }:
         selectObject={selectObject}
         selectedObjectId={selectedObjectId}
         clearSelection={clearSelection}
+        isEditMode={isEditMode}
+        transformMode={transformMode}
       />
     </Canvas>
   );

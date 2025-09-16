@@ -11,6 +11,8 @@ export type SceneObject = {
 export function useSceneManager() {
   const [objects, setObjects] = useState<SceneObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
 
   // Додає новий об'єкт у сцену
   const addObject = useCallback((mesh: THREE.Object3D) => {
@@ -50,12 +52,26 @@ export function useSceneManager() {
     });
   }, [objects]);
 
+  // Перемикає режим редагування
+  const toggleEditMode = useCallback(() => {
+    setIsEditMode(prev => !prev);
+  }, []);
+
+  // Змінює режим трансформації
+  const setTransformModeHandler = useCallback((mode: 'translate' | 'rotate' | 'scale') => {
+    setTransformMode(mode);
+  }, []);
+
   return {
     objects,
     selectedObjectId,
+    isEditMode,
+    transformMode,
     addObject,
     removeObject,
     selectObject,
     clearSelection,
+    toggleEditMode,
+    setTransformMode: setTransformModeHandler,
   };
 }
