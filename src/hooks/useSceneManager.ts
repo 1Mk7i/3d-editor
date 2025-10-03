@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 
 export type SceneObject = {
@@ -16,8 +16,29 @@ export function useSceneManager() {
 
   // Додає новий об'єкт у сцену
   const addObject = useCallback((mesh: THREE.Object3D) => {
-    setObjects(prev => [...prev, { id: mesh.uuid, mesh }]);
-  }, []);
+    console.log('=== addObject CALLED ===');
+    console.log('Mesh:', mesh);
+    console.log('Previous objects count:', objects.length);
+    setObjects(prev => {
+      const newObjects = [...prev, { id: mesh.uuid, mesh }];
+      console.log('New objects count:', newObjects.length);
+      return newObjects;
+    });
+    console.log('addObject completed');
+  }, [objects.length]);
+
+  const getTreeScene = useCallback(() => {
+    const traverseObject = (obj: THREE.Object3D): any => {
+      return {
+        id: obj.uuid,
+        name: obj.name,
+        type: obj.type,
+        shape: (obj as THREE.Mesh).geometry ? (obj as THREE.Mesh).geometry.type : null,
+        children: obj.children.map(traverseObject),
+      };
+    };
+    return objects.map(obj => traverseObject(obj.mesh));
+  }, [objects]);
 
   // Видаляє об'єкт зі сцени
   const removeObject = useCallback((id: string) => {
@@ -62,7 +83,21 @@ export function useSceneManager() {
     setTransformMode(mode);
   }, []);
 
-  return {
+  // Змінює основний колір об'єкта
+  const changeObjectColor = useCallback((id: string, color: number) => {
+    const object = objects.find(obj => obj.id === id);
+    if (object) {
+      const mesh = object.mesh as THREE.Mesh;
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      if (material) {
+        material.color.setHex(color);
+      }
+    }
+  }, [objects]);
+
+
+
+  return useMemo(() => ({
     objects,
     selectedObjectId,
     isEditMode,
@@ -73,5 +108,20 @@ export function useSceneManager() {
     clearSelection,
     toggleEditMode,
     setTransformMode: setTransformModeHandler,
-  };
+    changeObjectColor,
+    getTreeScene,
+  }), [
+    objects,
+    selectedObjectId,
+    isEditMode,
+    transformMode,
+    addObject,
+    removeObject,
+    selectObject,
+    clearSelection,
+    toggleEditMode,
+    setTransformModeHandler,
+    changeObjectColor,
+    getTreeScene,
+  ]);
 }

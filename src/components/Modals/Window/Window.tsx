@@ -2,30 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import './Window.css';
-
-export interface WindowProps {
-  id: string;
-  title: string;
-  icon?: React.ReactNode;
-  isVisible: boolean;
-  isMinimized?: boolean;
-  isMaximized?: boolean;
-  initialPosition?: { x: number; y: number };
-  initialSize?: { width: number; height: number };
-  minSize?: { width: number; height: number };
-  maxSize?: { width: number; height: number };
-  resizable?: boolean;
-  draggable?: boolean;
-  children: React.ReactNode;
-  onClose: () => void;
-  onMinimize?: () => void;
-  onMaximize?: () => void;
-  onRestore?: () => void;
-  onFocus?: () => void;
-  zIndex?: number;
-  confirmClose?: boolean;
-  closeConfirmMessage?: string;
-}
+import { WindowProps } from './types';
 
 export const Window: React.FC<WindowProps> = ({
   id,

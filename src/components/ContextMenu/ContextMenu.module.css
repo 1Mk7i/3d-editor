@@ -243,12 +243,23 @@
 /* Стилі для підменю */
 .submenu {
   z-index: 10001 !important;
+  pointer-events: auto !important;
 }
 
 .submenu .context-menu-content {
   /* Переконуємося, що немає зайвих margin чи padding */
   margin: 0;
   position: relative;
+  pointer-events: auto !important;
+}
+
+.submenu .context-menu-item {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.submenu .context-menu-item:hover {
+  pointer-events: auto !important;
 }
 
 /* Переконуємося, що підменю видимі */

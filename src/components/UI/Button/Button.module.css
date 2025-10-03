@@ -1,0 +1,126 @@
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --secondary-color: #6c757d;
+    --secondary-hover: #5a6268;
+    --success-color: #28a745;
+    --success-hover: #218838;
+    --danger-color: #dc3545;
+    --danger-hover: #c82333;
+    --warning-color: #ffc107;
+    --warning-hover: #e0a800;
+    --info-color: #17a2b8;
+    --info-hover: #138496;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --button-radius: 40px;
+}
+
+.button {
+    border: none;
+    border-radius: var(--button-radius);
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Variants */
+.primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.primary:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+}
+
+.secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.secondary:hover:not(:disabled) {
+    background-color: var(--secondary-hover);
+}
+
+.danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.danger:hover:not(:disabled) {
+    background-color: var(--danger-hover);
+}
+
+.warning {
+    background-color: var(--warning-color);
+    color: #212529;
+}
+
+.warning:hover:not(:disabled) {
+    background-color: var(--warning-hover);
+}
+
+.success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.success:hover:not(:disabled) {
+    background-color: var(--success-hover);
+}
+
+.info {
+    background-color: var(--info-color);
+    color: white;
+}
+
+.info:hover:not(:disabled) {
+    background-color: var(--info-hover);
+}
+
+.menu {
+    background-color: var(--dark-color);
+    color: rgb(194, 194, 194);
+    border-radius: 5px !important;
+}
+
+.menu:hover:not(:disabled) {
+    background-color: var(--dark-color);
+    color: var(--primary-color);
+}
+
+
+/* Sizes */
+.small {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.medium {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.large {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+/* Full width */
+.fullWidth {
+    width: 100%;
+}

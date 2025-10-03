@@ -279,22 +279,39 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   const handleSubmenuItemClick = (item: ContextMenuItem, event: React.MouseEvent, currentLevel: number) => {
+    console.log('=== handleSubmenuItemClick CALLED ===');
+    console.log('Item:', item);
+    console.log('Item label:', item.label);
+    console.log('Item onClick:', item.onClick);
+    console.log('Event:', event);
+    console.log('Current level:', currentLevel);
+    
     event.stopPropagation();
     
-    if (item.disabled || item.separator) return;
+    if (item.disabled || item.separator) {
+      console.log('Item is disabled or separator, returning');
+      return;
+    }
     
     if (item.submenu && item.submenu.length > 0) {
+      console.log('Item has submenu, showing it');
       const itemElement = event.currentTarget as HTMLElement;
       const rect = itemElement.getBoundingClientRect();
       showSubmenu(item, rect, currentLevel + 1);
     } else {
+      console.log('Item has no submenu, calling onClick');
       // Викликаємо onClick і закриваємо меню
       if (item.onClick) {
+        console.log('Calling onClick...');
         item.onClick();
+        console.log('onClick called successfully');
+      } else {
+        console.log('No onClick function found');
       }
       setSubmenuStack([]);
       onClose();
     }
+    console.log('=== handleSubmenuItemClick END ===');
   };
 
   const handleSubmenuClose = (level?: number) => {

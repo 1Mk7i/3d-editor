@@ -1,23 +1,44 @@
 'use client'
 
 import React from 'react'
-import { CSSProperties, ReactNode } from 'react'
 import styles from './Button.module.css'
+import { ButtonProps } from './types'
+import clsx from 'clsx'
 
-type ButtonProps = {
-  style?: CSSProperties
-  label?: string
-  onClick?: () => void
-  children?: ReactNode
-}
+const Button: React.FC<ButtonProps> = ({ 
+  variant = 'primary',
+  size = 'medium',
+  style,
+  label,
+  onClick,
+  children,
+  disabled = false,
+  fullWidth = false,
+  icon,
+  type = 'button',
+  className
+}) => {
+  const buttonClasses = clsx(
+    styles.button,
+    styles[variant],
+    styles[size],
+    fullWidth && styles.fullWidth,
+    className
+  )
 
-const Button: React.FC<ButtonProps> = ({ style, label, onClick, children }) => {
   return (
-    <button className={styles.button} style={style} onClick={onClick}>
+    <button
+      type={type}
+      className={buttonClasses}
+      style={style}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {icon && <span className={styles.icon}>{icon}</span>}
       {label}
       {children}
     </button>
   )
 }
 
-export default Button
+export { Button }

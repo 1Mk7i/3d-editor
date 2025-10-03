@@ -1,28 +1,55 @@
-import React, { ReactNode, CSSProperties } from 'react';
+import React from 'react';
+import styles from './Menu.module.css';
+import { MenuProps } from './types';
+import clsx from 'clsx';
 
-type MenuProps = {
-  style?: CSSProperties;
-  title?: string;
-  children?: ReactNode;
-};
+const Menu: React.FC<MenuProps> = ({
+  variant = 'primary',
+  position = 'top',
+  size = 'medium',
+  style,
+  title = "Menu",
+  children,
+  className,
+  isCollapsible = false,
+  isCollapsed = false,
+  onCollapse,
+  showTitle = true,
+  titleAlignment = 'left',
+  borderStyle = 'none',
+  elevation = 1,
+  orientation = 'none'
+}) => {
+  const menuClasses = clsx(
+    styles.menu,
+    styles[variant],
+    styles[position],
+    styles[size],
+    isCollapsible && styles.collapsible,
+    isCollapsed && styles.collapsed,
+    borderStyle !== 'none' && styles[`border${borderStyle.charAt(0).toUpperCase()}${borderStyle.slice(1)}`],
+    styles[`elevation${elevation}`],
+    styles[orientation],
+    className
+  );
 
-const defaultMenuSettings: CSSProperties = {
-  position: 'absolute',
-  zIndex: 1000,
-  backgroundColor: 'black',
-  padding: '10px',
-  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  width: '100%',
-  height: 60,
-};
+  const titleClasses = clsx(
+    styles.title,
+    styles[`title${titleAlignment.charAt(0).toUpperCase()}${titleAlignment.slice(1)}`]
+  );
 
-const Menu: React.FC<MenuProps> = ({ style, title = "Top Menu", children }) => {
+  const handleClick = () => {
+    if (isCollapsible && onCollapse) {
+      onCollapse();
+    }
+  };
+
   return (
-    <div style={{ ...defaultMenuSettings, ...style }}>
-      <h1 style={{ color: 'white', margin: 0 }}>{title}</h1>
+    <div className={menuClasses} style={style} onClick={handleClick}>
+      {showTitle && <h1 className={titleClasses}>{title}</h1>}
       {children}
     </div>
   );
 };
 
-export default Menu;
+export { Menu };

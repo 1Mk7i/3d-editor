@@ -61,6 +61,8 @@ export const Submenu: React.FC<SubmenuProps> = ({
   }, [isVisible, position]);
 
   const renderMenuItem = (item: ContextMenuItem) => {
+    console.log('Rendering submenu item:', item.label, 'onClick exists:', !!item.onClick);
+    
     if (item.separator) {
       return <div key={item.id} className={styles['context-menu-separator']} />;
     }
@@ -72,12 +74,37 @@ export const Submenu: React.FC<SubmenuProps> = ({
         key={item.id}
         className={`${styles['context-menu-item']} ${item.disabled ? styles.disabled : ''} ${item.danger ? styles.danger : ''}`}
         data-has-submenu={hasSubmenu ? 'true' : 'false'}
-        onClick={(e) => {
+        onMouseDown={(e) => {
+          console.log('=== SUBMENU ITEM MOUSE DOWN ===');
+          console.log('Item:', item);
+          console.log('Item label:', item.label);
+          console.log('Item onClick exists:', !!item.onClick);
+          console.log('Event:', e);
+          e.preventDefault();
           e.stopPropagation();
+          console.log('About to call onItemClick...');
+          onItemClick(item, e as any);
+          console.log('onItemClick called');
+        }}
+        onClick={(e) => {
+          console.log('=== SUBMENU ITEM CLICKED ===');
+          console.log('Item:', item);
+          console.log('Item label:', item.label);
+          console.log('Item onClick exists:', !!item.onClick);
+          console.log('Event:', e);
+          e.stopPropagation();
+          console.log('About to call onItemClick...');
           onItemClick(item, e);
+          console.log('onItemClick called');
         }}
         onMouseEnter={(e) => onItemHover(item, e)}
         onMouseLeave={() => onItemLeave(item)}
+        style={{ 
+          cursor: 'pointer',
+          pointerEvents: 'auto',
+          position: 'relative',
+          zIndex: 10000
+        }}
       >
         <div className={styles['context-menu-item-content']}>
           {item.icon && <span className={styles['context-menu-icon']}>{item.icon}</span>}
