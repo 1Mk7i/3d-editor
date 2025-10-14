@@ -2,30 +2,28 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
-
-export type SceneObject = {
-  id: string;
-  mesh: THREE.Object3D;
-};
+import { CollectionElementProps } from '@/components/UI/Collection/types';
 
 export function useSceneManager() {
-  const [objects, setObjects] = useState<SceneObject[]>([]);
+  const [objects, setObjects] = useState<CollectionElementProps[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
 
   // Додає новий об'єкт у сцену
-  const addObject = useCallback((mesh: THREE.Object3D) => {
-    console.log('=== addObject CALLED ===');
-    console.log('Mesh:', mesh);
-    console.log('Previous objects count:', objects.length);
+  const addObject = useCallback((mesh: THREE.Object3D, name: string = 'Unnamed Object', type: string = mesh.type) => {
     setObjects(prev => {
-      const newObjects = [...prev, { id: mesh.uuid, mesh }];
-      console.log('New objects count:', newObjects.length);
-      return newObjects;
+      const newObject: CollectionElementProps = {
+        id: mesh.uuid,
+        mesh: mesh,
+        name: name,
+        type: type,
+        shape: (mesh as THREE.Mesh).geometry ? (mesh as THREE.Mesh).geometry.type : null,
+        children: []
+      };
+      return [...prev, newObject];
     });
-    console.log('addObject completed');
-  }, [objects.length]);
+  }, []);
 
   const getTreeScene = useCallback(() => {
     const traverseObject = (obj: THREE.Object3D): any => {

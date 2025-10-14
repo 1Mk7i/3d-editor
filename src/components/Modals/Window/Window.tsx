@@ -53,7 +53,7 @@ export const Window: React.FC<WindowProps> = ({
       if (maxSize) {
         setSize(maxSize);
       } else {
-        setSize({ width: window.innerWidth, height: window.innerHeight - 40 });
+        setSize({ width: window.innerWidth, height: window.innerHeight });
       }
       setWasMaximized(true);
     } else if (!isMaximized && wasMaximized) {

@@ -120,6 +120,12 @@
     font-size: 16px;
 }
 
+/* Extra Large */
+.extraLarge {
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
 /* Full width */
 .fullWidth {
     width: 100%;

@@ -1,0 +1,120 @@
+/* Collection.module.css */
+
+.collection {
+  display: flex;
+  flex-wrap: wrap; /* Дозволяє елементам переноситися на новий рядок */
+  gap: 8px; /* Відступ між елементами колекції */
+  padding: 12px;
+  background-color: #2a2a2e; /* Темний, майже чорний фон */
+  border-radius: 6px;
+  border: 1px solid #3c3c40; /* Легка світліша рамка */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  overflow-y: auto; /* Дозволяє прокрутку, якщо вмісту багато */
+  color: #e0e0e0; /* Колір тексту за замовчуванням */
+}
+
+/* Модифікації варіантів */
+.variantGrid {
+  flex-direction: row; /* За замовчуванням */
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.variantList {
+  flex-direction: column; /* Елементи розташовані вертикально */
+  gap: 4px; /* Менший проміжок для списку */
+}
+
+/* Модифікації розмірів (можна налаштувати під конкретні розміри UI-панелей) */
+.sizeSmall {
+  max-width: 180px;
+  max-height: 250px;
+}
+
+.sizeMedium {
+  max-width: 250px;
+  max-height: 350px;
+}
+
+.sizeLarge {
+  flex-grow: 1; /* Дозволяє займати більше простору */
+  max-width: none; /* Знімає обмеження ширини */
+  max-height: 450px;
+}
+
+.sizeExtraLarge {
+  flex-grow: 1;
+  max-width: none;
+  max-height: none; /* Займає весь доступний простір */
+}
+
+/* Стилі для окремих елементів колекції */
+.collectionElement {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #38383e; /* Трохи світліший фон елемента */
+  border-radius: 4px;
+  border: 1px solid transparent; /* Прозора рамка, щоб вона з'являлася при ховері/активному стані */
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  font-family: sans-serif; /* Простіший шрифт */
+}
+
+.collectionElement:hover {
+  background-color: #4a4a50; /* Ще світліший фон при наведенні */
+  border-color: #5a5a60; /* З'являється рамка при наведенні */
+}
+
+/* Специфічні стилі для сіткового варіанту елементів */
+.variantGrid .collectionElement {
+  flex-direction: column; /* Іконка зверху, текст знизу */
+  justify-content: center;
+  width: 80px; /* Фіксована ширина для елемента в сітці */
+  height: 80px; /* Фіксована висота */
+  text-align: center;
+}
+
+/* Специфічні стилі для спискового варіанту елементів */
+.variantList .collectionElement {
+  flex-direction: row; /* Іконка і текст в один рядок */
+  justify-content: flex-start;
+  width: 100%; /* Займає всю доступну ширину */
+  min-height: 32px;
+}
+
+/* Стилі для іконок/мініатюр всередині елементів */
+.elementIcon {
+  font-size: 1.5rem; /* Розмір іконки */
+  margin-bottom: 4px; /* Відступ від тексту в сітці */
+  color: #a0a0a0; /* Нейтральний колір іконки */
+}
+
+.variantList .elementIcon {
+  font-size: 1rem;
+  margin-right: 8px; /* Відступ від тексту в списку */
+  margin-bottom: 0;
+}
+
+.elementName {
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* Обмеження ширини тексту */
+}
+
+.variantList .elementName {
+  flex-grow: 1; /* Дозволяє тексту займати весь доступний простір */
+  text-align: left;
+}
+
+/* Стиль для активного (вибраного) елемента */
+.collectionElement.active {
+  background-color: #5a5a60; /* Темніший фон для вибраного */
+  border-color: #8bb4ff; /* Яскрава рамка для вибраного */
+  box-shadow: 0 0 5px rgba(139, 180, 255, 0.5); /* Легка синя тінь */
+  color: #ffffff; /* Білий текст для вибраного */
+}

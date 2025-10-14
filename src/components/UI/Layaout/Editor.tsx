@@ -12,7 +12,8 @@ import { Menu } from '@/components/UI/Menu/Menu';
 import useSceneTree from '@/hooks/useSceneTree';
 import { Button } from '@/components/UI/Button/Button';
 import { Window } from '@/components/Modals/Window/Window';
-import { Settings } from '@/components/UI/Settings/SettingsLayout';
+import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
+import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
 import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
 
@@ -34,6 +35,14 @@ const Editor: React.FC = () => {
             isVisible: true,
             position: { x: 100, y: 100 },
             size: { width: 600, height: 400 }
+        });
+    }, [windowManager]);
+
+    const handleChatClick = React.useCallback(() => {
+        windowManager.openWindow('chat', {
+            isVisible: true,
+            position: { x: 150, y: 150 },
+            size: { width: 400, height: 600 }
         });
     }, [windowManager]);
 
@@ -65,6 +74,9 @@ const Editor: React.FC = () => {
             >    
                 <Button variant="menu" size='small' onClick={handleSettingsClick}>
                     Налаштування
+                </Button>
+                <Button variant="menu" size='small' onClick={handleChatClick}>
+                    AI
                 </Button>
             </Menu>
 
@@ -126,6 +138,31 @@ const Editor: React.FC = () => {
                             onFocus={() => windowManager.focusWindow(window.id)}
                         >
                             <Settings onClose={() => windowManager.closeWindow('settings')} />
+                        </Window>
+                    );
+                }
+                if (window.id === 'chat') {
+                    return (
+                        <Window
+                            key={window.id}
+                            id={window.id}
+                            title="AI Chat"
+                            isVisible={window.isVisible}
+                            isMinimized={window.isMinimized}
+                            isMaximized={window.isMaximized}
+                            initialPosition={window.position}
+                            initialSize={window.size}
+                            minSize={{ width: 300, height: 400 }}
+                            resizable={true}
+                            draggable={true}
+                            zIndex={window.zIndex}
+                            onClose={() => windowManager.closeWindow(window.id)}
+                            onMinimize={() => windowManager.minimizeWindow(window.id)}
+                            onMaximize={() => windowManager.maximizeWindow(window.id)}
+                            onRestore={() => windowManager.restoreWindow(window.id)}
+                            onFocus={() => windowManager.focusWindow(window.id)}
+                        >
+                            <Chat onClose={() => windowManager.closeWindow('chat')} />
                         </Window>
                     );
                 }

@@ -4,14 +4,10 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, TransformControls } from '@react-three/drei'
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
-
-type SceneObject = {
-  id: string;
-  mesh: THREE.Object3D;
-};
+import { CollectionElementProps } from '@/components/UI/Collection/types'
 
 type ThreeSceneProps = {
-  objects: SceneObject[];
+  objects: CollectionElementProps[];
   selectObject: (id: string) => void;
   selectedObjectId: string | null;
   clearSelection: () => void;

@@ -64,7 +64,7 @@
   top: var(--top-menu-height);
   left: 0;
   height: calc(100% - var(--top-menu-height));
-  min-width: 200px;
+  min-width: 100px;
   max-width: 300px;
 }
 

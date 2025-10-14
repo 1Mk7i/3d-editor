@@ -1,21 +1,13 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-
-// Визначаємо типи для нашого дерева
-export interface TreeNode {
-  id: string;
-  name: string;
-  type: string;
-  shape?: string | null;
-  children?: TreeNode[];
-}
+import { CollectionElementProps } from '@/components/UI/Collection/types'
 
 function useSceneTree() {
-  const [treeData, setTreeData] = useState<TreeNode[]>([]);
+  const [treeData, setTreeData] = useState<CollectionElementProps[]>([]);
 
   // Мемоізуємо updateTree функцію
-  const updateTree = useCallback((newData: TreeNode[]) => {
+  const updateTree = useCallback((newData: CollectionElementProps[]) => {
     // Перевіряємо, чи дані дійсно змінилися
     if (JSON.stringify(newData) !== JSON.stringify(treeData)) {
       setTreeData(newData);

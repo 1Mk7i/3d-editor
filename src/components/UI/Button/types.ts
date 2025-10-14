@@ -1,7 +1,7 @@
 import { CSSProperties, ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'info' | 'menu';
-export type ButtonSize = 'small' | 'medium' | 'large';
+export type ButtonSize = 'small' | 'medium' | 'large' | 'extraLarge';
 
 export interface ButtonProps {
   variant?: ButtonVariant;
