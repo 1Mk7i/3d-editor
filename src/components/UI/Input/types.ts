@@ -3,7 +3,7 @@ export type InputSize = 'small' | 'medium' | 'large'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   type?: InputType;
-  size?: InputSize;
+  inputSize?: InputSize; // Renamed to avoid conflict
   className?: string;
   error?: boolean;
   icon?: 'left' | 'right';

@@ -43,11 +43,11 @@
 }
 .input-icon {
   padding-left: 36px;
-  background: url('../icons/search.svg') no-repeat 10px center;
+  /* background: url('../icons/search.svg') no-repeat 10px center; */
   background-size: 16px 16px;
 }
 .input-icon-right {
   padding-right: 36px;
-  background: url('../icons/clear.svg') no-repeat right 10px center;
+  /* background: url('../icons/clear.svg') no-repeat right 10px center; */
   background-size: 16px 16px;
 }

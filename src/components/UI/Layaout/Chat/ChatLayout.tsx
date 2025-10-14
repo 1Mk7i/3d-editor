@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import './Chat.css';
 import { ChatProps, ChatData } from './types';
+import Input from '@/components/UI/Input/Input';
+import { Button } from '@/components/UI/Button/Button';
 
 
 export const Chat: React.FC<ChatProps> = ({ onClose }) => {
@@ -10,7 +12,8 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     messages: [],
     inputText: '',
   });
-
+  
+  const SendIcon = () => <img src="/assets/send.svg" alt="Send" width={20} height={20} />;
   // const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +52,13 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     <div className="chat-container">
       <div className="chat-header">
         <h2 style={{ color: '#ffffff' }}>Чат</h2>
-        <button onClick={onClose} className="close-button">Скасувати</button>
+        <Button 
+          onClick={onClose} 
+          className="close-button"
+          variant="secondary"
+        >
+          Скасувати
+        </Button>
       </div>
       <div className="chat-messages">
         {chat.messages.map((msg, index) => (
@@ -62,13 +71,19 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
         ))}
       </div>
       <div className="chat-input">
-        <input
+        <Input
           type="text"
           value={chat.inputText}
           onChange={handleInputChange}
           placeholder="Введіть повідомлення..."
+          className="input-field"
         />
-        <button onClick={handleSendMessage} className="send-button">Відправити</button>
+        <Button
+          onClick={handleSendMessage}
+          variant="primary"
+          className="send-button"
+          icon={<SendIcon />}
+        />
       </div>
     </div>
   );
