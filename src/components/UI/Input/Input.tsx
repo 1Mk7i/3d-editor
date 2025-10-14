@@ -9,14 +9,24 @@ const Input: React.FC<InputProps> = ({
   className,
   type = 'text',
   size = 'medium',
+  error = false,
+  icon,
+  disabled,
   ...props
 }) => {
   return (
     <input
       type={type}
+      disabled={disabled}
       className={clsx(
         styles.input,
         styles[size],
+        {
+          [styles['input-error']]: error,
+          [styles['input-disabled']]: disabled,
+          [styles['input-icon']]: icon === 'left',
+          [styles['input-icon-right']]: icon === 'right',
+        },
         className
       )}
       {...props}
