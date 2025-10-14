@@ -1,6 +1,6 @@
 import { CSSProperties, ReactNode } from 'react';
 
-export type MenuVariant = 'primary' | 'secondary' | 'dark' | 'light' | 'transparent';
+export type MenuVariant = 'primary' | 'secondary' | 'dark' | 'light' | 'transparent' | 'invisible';
 export type MenuPosition = 'top' | 'left' | 'right' | 'bottom';
 export type MenuSize = 'small' | 'medium' | 'large';
 

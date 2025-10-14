@@ -67,7 +67,7 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
     return (
         <Menu
             position='left'
-            variant='secondary'
+            variant='invisible'
             elevation={0}
             title="Left Menu"
             orientation='vertical'
