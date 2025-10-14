@@ -16,9 +16,11 @@ import {
   CreateIcon,
 } from '../components/ContextMenu/Icons';
 
-import * as THREE from 'three';
-
-export type WindowType = 'ai-chat' | 'calculator' | 'file-manager';
+import { Mesh, BoxGeometry, SphereGeometry, CylinderGeometry, TorusGeometry, MeshStandardMaterial } from 'three';
+import { WindowType } from '@/shared/types/common.types';
+import { SceneManager } from '@/shared/types/scene.types';
+import { MATERIAL_COLORS, GEOMETRY_DEFAULTS } from '@/shared/constants/scene.constants';
+import { logger, logError } from '@/shared/utils/logger';
 
 /**
  * Створює конфігурацію контекстного меню
@@ -28,11 +30,9 @@ export type WindowType = 'ai-chat' | 'calculator' | 'file-manager';
  */
 export const createContextMenuItems = (
   openWindow: (type: WindowType) => void,
-  sceneManager: any
+  sceneManager: SceneManager
 ): ContextMenuItem[] => {
-  console.log('=== CREATING CONTEXT MENU ITEMS ===');
-  console.log('sceneManager:', sceneManager);
-  console.log('sceneManager.addObject:', sceneManager.addObject);
+  logger.debug('CONTEXT_MENU', 'Creating context menu items', { sceneManager });
   
   return [
     {
@@ -45,23 +45,25 @@ export const createContextMenuItems = (
           label: 'Куб',
           icon: <CreateIcon />,
           onClick: () => {
-            console.log('=== CREATE CUBE CLICKED ===');
-            // alert('Create Cube clicked!');
+            logger.debug('CONTEXT_MENU', 'Create cube clicked');
             try {
-              // Створюємо куб
-              const geometry = new THREE.BoxGeometry(1, 1, 1);
-              const material = new THREE.MeshStandardMaterial({ 
-                color: 0x00ff00,
-                emissive: 0x000000 
+              const geometry = new BoxGeometry(
+                GEOMETRY_DEFAULTS.CUBE.width,
+                GEOMETRY_DEFAULTS.CUBE.height,
+                GEOMETRY_DEFAULTS.CUBE.depth
+              );
+              const material = new MeshStandardMaterial({ 
+                color: MATERIAL_COLORS.CUBE,
+                emissive: MATERIAL_COLORS.UNSELECTED 
               });
-              const cube = new THREE.Mesh(geometry, material);
+              const cube = new Mesh(geometry, material);
               cube.position.set(0, 0, 0);
+              cube.name = 'Куб';
               
-              console.log('Created cube:', cube);
-              sceneManager.addObject(cube);
-              console.log('Cube added successfully');
+              sceneManager.addObject(cube, 'Куб', 'Mesh');
+              logger.info('Cube added successfully');
             } catch (error) {
-              console.error('Error adding cube:', error);
+              logError('adding cube to scene', error);
             }
           }
         },
@@ -70,23 +72,25 @@ export const createContextMenuItems = (
           label: 'Сфера',
           icon: <CreateIcon />,
           onClick: () => {
-            console.log('=== CREATE SPHERE CLICKED ===');
-            // alert('Create Sphere clicked!');
+            logger.debug('CONTEXT_MENU', 'Create sphere clicked');
             try {
-              // Створюємо сферу
-              const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-              const material = new THREE.MeshStandardMaterial({ 
-                color: 0x0000ff,
-                emissive: 0x000000 
+              const geometry = new SphereGeometry(
+                GEOMETRY_DEFAULTS.SPHERE.radius,
+                GEOMETRY_DEFAULTS.SPHERE.widthSegments,
+                GEOMETRY_DEFAULTS.SPHERE.heightSegments
+              );
+              const material = new MeshStandardMaterial({ 
+                color: MATERIAL_COLORS.SPHERE,
+                emissive: MATERIAL_COLORS.UNSELECTED 
               });
-              const sphere = new THREE.Mesh(geometry, material);
+              const sphere = new Mesh(geometry, material);
               sphere.position.set(0, 0, 0);
+              sphere.name = 'Сфера';
               
-              console.log('Created sphere:', sphere);
-              sceneManager.addObject(sphere);
-              console.log('Sphere added successfully');
+              sceneManager.addObject(sphere, 'Сфера', 'Mesh');
+              logger.info('Sphere added successfully');
             } catch (error) {
-              console.error('Error adding sphere:', error);
+              logError('adding sphere to scene', error);
             }
           }
         },
@@ -95,22 +99,26 @@ export const createContextMenuItems = (
           label: 'Циліндр',
           icon: <CreateIcon />,
           onClick: () => {
-            console.log('=== CREATE CYLINDER CLICKED ===');
+            logger.debug('CONTEXT_MENU', 'Create cylinder clicked');
             try {
-              // Створюємо циліндр
-              const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-              const material = new THREE.MeshStandardMaterial({ 
-                color: 0xff0000,
-                emissive: 0x000000
+              const geometry = new CylinderGeometry(
+                GEOMETRY_DEFAULTS.CYLINDER.radiusTop,
+                GEOMETRY_DEFAULTS.CYLINDER.radiusBottom,
+                GEOMETRY_DEFAULTS.CYLINDER.height,
+                GEOMETRY_DEFAULTS.CYLINDER.radialSegments
+              );
+              const material = new MeshStandardMaterial({ 
+                color: MATERIAL_COLORS.CYLINDER,
+                emissive: MATERIAL_COLORS.UNSELECTED
               });
-              const cylinder = new THREE.Mesh(geometry, material);
+              const cylinder = new Mesh(geometry, material);
               cylinder.position.set(0, 0, 0);
+              cylinder.name = 'Циліндр';
               
-              console.log('Created cylinder:', cylinder);
-              sceneManager.addObject(cylinder);
-              console.log('Cylinder added successfully');
+              sceneManager.addObject(cylinder, 'Циліндр', 'Mesh');
+              logger.info('Cylinder added successfully');
             } catch (error) {
-              console.error('Error adding cylinder:', error);
+              logError('adding cylinder to scene', error);
             }
           }
         },
@@ -119,22 +127,26 @@ export const createContextMenuItems = (
           label: 'Тор',
           icon: <CreateIcon />,
           onClick: () => {
-            console.log('=== CREATE TORUS CLICKED ===');
+            logger.debug('CONTEXT_MENU', 'Create torus clicked');
             try {
-              // Створюємо тор
-              const geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
-              const material = new THREE.MeshStandardMaterial({
-                color: 0xff0000,
-                emissive: 0x000000
+              const geometry = new TorusGeometry(
+                GEOMETRY_DEFAULTS.TORUS.radius,
+                GEOMETRY_DEFAULTS.TORUS.tube,
+                GEOMETRY_DEFAULTS.TORUS.radialSegments,
+                GEOMETRY_DEFAULTS.TORUS.tubularSegments
+              );
+              const material = new MeshStandardMaterial({
+                color: MATERIAL_COLORS.TORUS,
+                emissive: MATERIAL_COLORS.UNSELECTED
               });
-              const torus = new THREE.Mesh(geometry, material);
+              const torus = new Mesh(geometry, material);
               torus.position.set(0, 0, 0);
+              torus.name = 'Тор';
 
-              console.log('Created torus:', torus);
-              sceneManager.addObject(torus);
-              console.log('Torus added successfully');
+              sceneManager.addObject(torus, 'Тор', 'Mesh');
+              logger.info('Torus added successfully');
             } catch (error) {
-              console.error('Error adding torus:', error);
+              logError('adding torus to scene', error);
             }
           }
         },
@@ -149,21 +161,21 @@ export const createContextMenuItems = (
       label: 'Вирізати',
       icon: <CutIcon />,
       shortcut: 'Ctrl+X',
-      onClick: () => console.log('Cut clicked'),
+      onClick: () => logger.info('Cut action triggered'),
     },
     {
       id: 'copy',
       label: 'Копіювати',
       icon: <CopyIcon />,
       shortcut: 'Ctrl+C',
-      onClick: () => console.log('Copy clicked'),
+      onClick: () => logger.info('Copy action triggered'),
     },
     {
       id: 'paste',
       label: 'Вставити',
       icon: <PasteIcon />,
       shortcut: 'Ctrl+V',
-      onClick: () => console.log('Paste clicked'),
+      onClick: () => logger.info('Paste action triggered'),
     },
     {
       id: 'separator2',
@@ -217,7 +229,7 @@ export const createContextMenuItems = (
       id: 'properties',
       label: 'Властивості',
       icon: <InfoIcon />,
-      onClick: () => console.log('Properties clicked'),
+      onClick: () => logger.info('Properties action triggered'),
     },
   ];
 };
