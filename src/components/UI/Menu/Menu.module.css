@@ -1,15 +1,13 @@
 :root {
   --menu-primary-bg: #000000;
-  --menu-secondary-bg: #474747c7;
+  --menu-secondary-bg: #2c3e5088;
   --menu-dark-bg: #1a1a1a;
   --menu-light-bg: #ffffff;
-  --menu-invisible-bg: transparent;
   
   --menu-primary-text: #ffffff;
   --menu-secondary-text: #f8f9fa;
   --menu-dark-text: #ffffff;
   --menu-light-text: #212529;
-  --menu-invisible-text: #ffffff;
   
   --menu-border-radius: 0;
   --menu-padding: 10px;
@@ -36,11 +34,6 @@
 .secondary {
   background-color: var(--menu-secondary-bg);
   color: var(--menu-secondary-text);
-}
-
-.inverse {
-  background-color: var(--menu-invisible-bg);
-  color: var(--menu-invisible-text);
 }
 
 .dark {
