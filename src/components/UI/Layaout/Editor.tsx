@@ -14,9 +14,11 @@ import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
 import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
 import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
-import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
-import { Settings as SettingsIcon, SmartToy as AIIcon } from '@mui/icons-material';
+import { Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem } from '@mui/material';
+import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { useSettings } from '@/hooks/useSettings';
+import { FileDialog, FileOperation, FileFormat } from './FileMenu/FileDialog';
+import { exportToJSON, importFromJSON, createObjectFromData, loadFileAsText, downloadFile, importModelFromFile, exportSceneToFormat } from '@/shared/services/fileService';
 
 const Editor: React.FC = () => {
     const contextMenu = useContextMenu();
@@ -51,6 +53,142 @@ const Editor: React.FC = () => {
             size: { width: 400, height: 600 }
         });
     }, [windowManager]);
+
+    // Файлове меню
+    const [fileMenuAnchor, setFileMenuAnchor] = React.useState<null | HTMLElement>(null);
+    const [fileDialogOpen, setFileDialogOpen] = React.useState(false);
+    const [fileOperation, setFileOperation] = React.useState<FileOperation>('export');
+
+    const handleFileMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
+        setFileMenuAnchor(event.currentTarget);
+    }, []);
+
+    const handleFileMenuClose = React.useCallback(() => {
+        setFileMenuAnchor(null);
+    }, []);
+
+    const handleFileMenuClick = React.useCallback((operation: FileOperation) => {
+        setFileOperation(operation);
+        if (operation === 'import') {
+            // Для імпорту одразу відкриваємо вибір файлу без діалогу
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,.gltf,.glb,.obj,.stl,.ply,.fbx,.dae,.3mf,.amf';
+            input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+
+                try {
+                    // Визначаємо формат за розширенням файлу
+                    const fileName = file.name.toLowerCase();
+                    let format: FileFormat = 'json';
+                    
+                    if (fileName.endsWith('.json')) format = 'json';
+                    else if (fileName.endsWith('.gltf')) format = 'gltf';
+                    else if (fileName.endsWith('.glb')) format = 'glb';
+                    else if (fileName.endsWith('.obj')) format = 'obj';
+                    else if (fileName.endsWith('.stl')) format = 'stl';
+                    else if (fileName.endsWith('.ply')) format = 'ply';
+                    else if (fileName.endsWith('.fbx')) format = 'fbx';
+                    else if (fileName.endsWith('.dae')) format = 'dae';
+                    else if (fileName.endsWith('.3mf')) format = '3mf';
+                    else if (fileName.endsWith('.amf')) format = 'amf';
+                    else {
+                        alert('Невідомий формат файлу. Підтримуються: JSON, GLTF, GLB, OBJ, STL, PLY, FBX, DAE, 3MF, AMF');
+                        return;
+                    }
+
+                    try {
+                        // Імпортуємо модель використовуючи Three.js завантажувачі
+                        const importedObjects = await importModelFromFile(file, format);
+                        
+                        if (importedObjects.length === 0) {
+                            alert('Файл не містить об\'єктів для імпорту');
+                            return;
+                        }
+                        
+                        // Додаємо об'єкти до сцени
+                        let importedCount = 0;
+                        importedObjects.forEach((obj, index) => {
+                            try {
+                                const name = obj.name || `Imported Object ${index + 1}`;
+                                sceneManager.addObject(obj, name, obj.type);
+                                importedCount++;
+                            } catch (error) {
+                                console.error('Помилка при додаванні об\'єкта:', error);
+                            }
+                        });
+                        
+                        if (importedCount > 0) {
+                            console.log(`Успішно імпортовано ${importedCount} об'єктів`);
+                        } else {
+                            alert('Не вдалося імпортувати жодного об\'єкта');
+                        }
+                    } catch (importError) {
+                        // Якщо імпорт через Three.js не вдався, спробуємо JSON
+                        if (format === 'json') {
+                            try {
+                                const json = await loadFileAsText(file);
+                                const objectsData = importFromJSON(json);
+                                
+                                if (objectsData.length === 0) {
+                                    alert('Файл не містить об\'єктів для імпорту');
+                                    return;
+                                }
+                                
+                                let importedCount = 0;
+                                objectsData.forEach(objData => {
+                                    try {
+                                        const mesh = createObjectFromData(objData);
+                                        sceneManager.addObject(mesh, objData.name, objData.type);
+                                        importedCount++;
+                                    } catch (error) {
+                                        console.error('Помилка при створенні об\'єкта:', error);
+                                    }
+                                });
+                                
+                                if (importedCount > 0) {
+                                    console.log(`Успішно імпортовано ${importedCount} об'єктів`);
+                                } else {
+                                    alert('Не вдалося імпортувати жодного об\'єкта');
+                                }
+                            } catch (jsonError) {
+                                console.error('Помилка при імпорті JSON:', jsonError);
+                                alert('Помилка при імпорті файлу. Перевірте формат файлу.');
+                            }
+                        } else {
+                            console.error('Помилка при імпорті:', importError);
+                            alert(`Помилка при імпорті файлу формату ${format}. Перевірте файл.`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Помилка при імпорті:', error);
+                    alert('Помилка при імпорті файлу. Перевірте формат файлу.');
+                }
+            };
+            input.click();
+            handleFileMenuClose();
+        } else {
+            // Для експорту відкриваємо діалог
+            setFileDialogOpen(true);
+            handleFileMenuClose();
+        }
+    }, [handleFileMenuClose, sceneManager]);
+
+    const handleFileDialogClose = React.useCallback(() => {
+        setFileDialogOpen(false);
+    }, []);
+
+    const handleFileConfirm = React.useCallback(async (format: FileFormat, fileName?: string) => {
+        // Експорт (імпорт обробляється безпосередньо в handleFileMenuClick)
+        try {
+            await exportSceneToFormat(sceneManager.objects, format, fileName || 'scene');
+            console.log(`Модель успішно експортовано в формат ${format}`);
+        } catch (error) {
+            console.error('Помилка при експорті:', error);
+            alert(error instanceof Error ? error.message : 'Помилка при експорті моделі');
+        }
+    }, [sceneManager]);
 
     const handleColorChange = React.useCallback(() => {
         if (sceneManager.selectedObjectId) {
@@ -149,9 +287,30 @@ const Editor: React.FC = () => {
         >
             <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
                 <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'text.primary' }}>
+                    <Typography variant="h6" component="div" sx={{ color: 'text.primary', mr: 2 }}>
                         3D Editor
                     </Typography>
+                    <Button
+                        color="inherit"
+                        startIcon={<FolderIcon />}
+                        onClick={handleFileMenuOpen}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        Файл
+                    </Button>
+                    <Menu
+                        anchorEl={fileMenuAnchor}
+                        open={Boolean(fileMenuAnchor)}
+                        onClose={handleFileMenuClose}
+                    >
+                        <MenuItem onClick={() => handleFileMenuClick('import')}>
+                            Імпорт моделі
+                        </MenuItem>
+                        <MenuItem onClick={() => handleFileMenuClick('export')}>
+                            Експорт моделі
+                        </MenuItem>
+                    </Menu>
+                    <Box sx={{ flexGrow: 1 }} />
                     <Button
                         color="inherit"
                         startIcon={<SettingsIcon />}
@@ -209,6 +368,14 @@ const Editor: React.FC = () => {
                 position={contextMenu.position}
                 items={createContextMenuItems(windowManager.openWindow, sceneManager)}
                 onClose={contextMenu.hideContextMenu}
+            />
+
+            <FileDialog
+                open={fileDialogOpen}
+                operation={fileOperation}
+                onClose={handleFileDialogClose}
+                onConfirm={handleFileConfirm}
+                objectsCount={sceneManager.objects.length}
             />
 
             {windowManager.windows.map(window => {
