@@ -5,6 +5,7 @@ import { OrbitControls, TransformControls } from '@react-three/drei'
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { CollectionElementProps } from '@/components/UI/Collection/types'
+import { SettingsData } from '@/hooks/useSettings'
 
 type ThreeSceneProps = {
   objects: CollectionElementProps[];
@@ -13,14 +14,33 @@ type ThreeSceneProps = {
   clearSelection: () => void;
   isEditMode: boolean;
   transformMode: 'translate' | 'rotate' | 'scale';
+  settings: SettingsData;
 };
 
-const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode }: ThreeSceneProps) => {
-  const { camera, gl } = useThree();
+const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode, settings }: ThreeSceneProps) => {
+  const { camera, gl, scene } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
   const isDragging = useRef(false);
   const mouseDownPos = useRef(new THREE.Vector2());
+  const gridHelperRef = useRef<THREE.GridHelper | null>(null);
+
+  // Застосовуємо налаштування фону сцени
+  useEffect(() => {
+    const color = new THREE.Color(settings.sceneBackgroundColor);
+    scene.background = color;
+  }, [settings.sceneBackgroundColor, scene]);
+
+  // Застосовуємо налаштування якості рендерингу
+  useEffect(() => {
+    const pixelRatio = settings.renderQuality === 'high' ? 2 : settings.renderQuality === 'medium' ? 1.5 : 1;
+    gl.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio));
+  }, [settings.renderQuality, gl]);
+
+  // Застосовуємо налаштування згладжування
+  useEffect(() => {
+    gl.antialias = settings.antialiasing;
+  }, [settings.antialiasing, gl]);
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -72,28 +92,70 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
     };
   }, [objects, selectObject, clearSelection, camera, gl]);
 
+  // Оновлюємо сітку при зміні налаштувань
+  useEffect(() => {
+    if (gridHelperRef.current) {
+      scene.remove(gridHelperRef.current);
+    }
+    
+    if (settings.gridVisible) {
+      const gridHelper = new THREE.GridHelper(
+        settings.gridSize,
+        settings.gridDivisions,
+        'gray',
+        'lightgray'
+      );
+      gridHelperRef.current = gridHelper;
+      scene.add(gridHelper);
+    }
+
+    return () => {
+      if (gridHelperRef.current) {
+        scene.remove(gridHelperRef.current);
+        gridHelperRef.current = null;
+      }
+    };
+  }, [settings.gridVisible, settings.gridSize, settings.gridDivisions, scene]);
+
   return (
     <>
       <ambientLight intensity={0.5} />
-      <directionalLight position={[2, 2, 2]} intensity={0.8} />
-      <gridHelper args={[20, 20, 'gray', 'lightgray']} />
-      {objects.map(obj => (
-        obj.id === selectedObjectId ? (
+      <directionalLight 
+        position={[2, 2, 2]} 
+        intensity={0.8}
+        castShadow={settings.shadows}
+      />
+      {objects.map(obj => {
+        // Застосовуємо тіні до об'єктів
+        if (obj.mesh instanceof THREE.Mesh) {
+          obj.mesh.castShadow = settings.shadows;
+          obj.mesh.receiveShadow = settings.shadows;
+        }
+        
+        return obj.id === selectedObjectId ? (
           <TransformControls object={obj.mesh} key={obj.id} mode={isEditMode ? transformMode : 'translate'}>
             <primitive object={obj.mesh} />
           </TransformControls>
         ) : (
           <primitive object={obj.mesh} key={obj.id} />
-        )
-      ))}
+        );
+      })}
       <OrbitControls makeDefault />
     </>
   );
 };
 
-const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode }: ThreeSceneProps) => {
+const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode, settings }: ThreeSceneProps) => {
+  // Використовуємо key для форсування оновлення при зміні налаштувань
+  const settingsKey = `${settings.sceneBackgroundColor}-${settings.gridVisible}-${settings.gridSize}-${settings.gridDivisions}-${settings.renderQuality}-${settings.shadows}-${settings.antialiasing}`;
+  
   return (
-    <Canvas style={{ width: '100%', height: '100%' }}>
+    <Canvas 
+      key={settingsKey}
+      style={{ width: '100%', height: '100%' }}
+      shadows={settings.shadows}
+      gl={{ antialias: settings.antialiasing }}
+    >
       <SceneContent 
         objects={objects}
         selectObject={selectObject}
@@ -101,6 +163,7 @@ const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, i
         clearSelection={clearSelection}
         isEditMode={isEditMode}
         transformMode={transformMode}
+        settings={settings}
       />
     </Canvas>
   );

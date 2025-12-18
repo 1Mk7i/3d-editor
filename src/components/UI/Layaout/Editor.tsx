@@ -16,12 +16,14 @@ import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
 import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon, SmartToy as AIIcon } from '@mui/icons-material';
+import { useSettings } from '@/hooks/useSettings';
 
 const Editor: React.FC = () => {
     const contextMenu = useContextMenu();
     const windowManager = useWindowManager();
     const sceneManager = useSceneManager();
     const sceneTree = useSceneTree();
+    const { settings } = useSettings();
     const [isMounted, setIsMounted] = React.useState(false);
 
     React.useEffect(() => {
@@ -188,6 +190,7 @@ const Editor: React.FC = () => {
                         clearSelection={sceneManager.clearSelection}
                         isEditMode={sceneManager.isEditMode}
                         transformMode={sceneManager.transformMode}
+                        settings={settings}
                     />
                 </Box>
 

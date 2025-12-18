@@ -18,67 +18,80 @@ import {
   Slider,
   Divider,
   Stack,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Palette as PaletteIcon,
   Settings as SettingsIcon,
   Lock as LockIcon,
+  ThreeDRotation as SceneIcon,
 } from '@mui/icons-material';
+import { useSettings } from '@/hooks/useSettings';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 export interface SettingsProps {
   onClose?: () => void;
 }
 
-interface SettingsData {
-  theme: 'light' | 'dark' | 'auto';
-  language: string;
-  fontSize: number;
-  animations: boolean;
-  notifications: boolean;
-  autoSave: boolean;
-}
-
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const [settings, setSettings] = useState<SettingsData>({
-    theme: 'dark',
-    language: 'uk',
-    fontSize: 14,
-    animations: true,
-    notifications: true,
-    autoSave: true,
-  });
-
+  const { settings: currentSettings, saveSettings, resetSettings, clearAllData } = useSettings();
+  const [localSettings, setLocalSettings] = useState<typeof currentSettings>(currentSettings);
   const [activeTab, setActiveTab] = useState(0);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
-  const handleSettingChange = <K extends keyof SettingsData>(
+  // Синхронізуємо локальний стан з поточними налаштуваннями при відкритті
+  // Використовуємо useRef щоб не оновлювати при збереженні
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      setLocalSettings(currentSettings);
+      isInitialMount.current = false;
+    }
+  }, []);
+
+  const handleSettingChange = <K extends keyof typeof localSettings>(
     key: K,
-    value: SettingsData[K]
+    value: typeof localSettings[K]
   ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSave = () => {
-    localStorage.setItem('app-settings', JSON.stringify(settings));
-    console.log('Налаштування збережено:', settings);
-    onClose?.();
+    saveSettings(localSettings);
+    setShowSuccessMessage(true);
   };
 
   const handleReset = () => {
-    setSettings({
-      theme: 'dark',
+    const defaultSettings = {
+      theme: 'dark' as const,
       language: 'uk',
       fontSize: 14,
       animations: true,
       notifications: true,
       autoSave: true,
-    });
+      sceneBackgroundColor: '#121212',
+      gridVisible: true,
+      gridSize: 20,
+      gridDivisions: 20,
+      renderQuality: 'high' as const,
+      shadows: true,
+      antialiasing: true,
+    };
+    setLocalSettings(defaultSettings);
+    resetSettings();
+    setShowSuccessMessage(true);
   };
 
   const handleClearData = () => {
-    if (window.confirm('Ви впевнені, що хочете очистити всі дані?')) {
-      localStorage.clear();
-      alert('Всі дані очищено');
-    }
+    setShowClearDialog(true);
+  };
+
+  const confirmClearData = () => {
+    clearAllData();
+    setShowClearDialog(false);
+    setShowSuccessMessage(true);
   };
 
   return (
@@ -127,6 +140,12 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             label="Приватність"
             sx={{ textTransform: 'none' }}
           />
+          <Tab
+            icon={<SceneIcon />}
+            iconPosition="start"
+            label="3D Сцена"
+            sx={{ textTransform: 'none' }}
+          />
         </Tabs>
       </Paper>
 
@@ -145,6 +164,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             {activeTab === 0 && 'Вигляд'}
             {activeTab === 1 && 'Поведінка'}
             {activeTab === 2 && 'Приватність'}
+            {activeTab === 3 && '3D Сцена'}
           </Typography>
         </Paper>
 
@@ -154,7 +174,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <FormControl fullWidth>
                 <InputLabel>Тема</InputLabel>
                 <Select
-                  value={settings.theme}
+                  value={localSettings.theme}
                   label="Тема"
                   onChange={(e) => handleSettingChange('theme', e.target.value as 'light' | 'dark' | 'auto')}
                 >
@@ -166,10 +186,10 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
               <Box>
                 <Typography gutterBottom>
-                  Розмір шрифту: {settings.fontSize}px
+                  Розмір шрифту: {localSettings.fontSize}px
                 </Typography>
                 <Slider
-                  value={settings.fontSize}
+                  value={localSettings.fontSize}
                   onChange={(_, value) => handleSettingChange('fontSize', value as number)}
                   min={10}
                   max={20}
@@ -181,7 +201,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <FormControl fullWidth>
                 <InputLabel>Мова інтерфейсу</InputLabel>
                 <Select
-                  value={settings.language}
+                  value={localSettings.language}
                   label="Мова інтерфейсу"
                   onChange={(e) => handleSettingChange('language', e.target.value)}
                 >
@@ -197,7 +217,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.animations}
+                    checked={localSettings.animations}
                     onChange={(e) => handleSettingChange('animations', e.target.checked)}
                   />
                 }
@@ -207,7 +227,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.autoSave}
+                    checked={localSettings.autoSave}
                     onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
                   />
                 }
@@ -221,7 +241,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={settings.notifications}
+                    checked={localSettings.notifications}
                     onChange={(e) => handleSettingChange('notifications', e.target.checked)}
                   />
                 }
@@ -238,6 +258,111 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               >
                 Очистити всі дані
               </Button>
+            </Stack>
+          )}
+
+          {activeTab === 3 && (
+            <Stack spacing={3}>
+              <FormControl fullWidth>
+                <InputLabel>Колір фону сцени</InputLabel>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
+                  <TextField
+                    type="color"
+                    value={localSettings.sceneBackgroundColor}
+                    onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
+                    sx={{ width: 80, height: 56 }}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Hex код"
+                    value={localSettings.sceneBackgroundColor}
+                    onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
+                    placeholder="#121212"
+                  />
+                </Box>
+              </FormControl>
+
+              <Divider />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={localSettings.gridVisible}
+                    onChange={(e) => handleSettingChange('gridVisible', e.target.checked)}
+                  />
+                }
+                label="Показати сітку"
+              />
+
+              {localSettings.gridVisible && (
+                <Box>
+                  <Typography gutterBottom>
+                    Розмір сітки: {localSettings.gridSize}
+                  </Typography>
+                  <Slider
+                    value={localSettings.gridSize}
+                    onChange={(_, value) => handleSettingChange('gridSize', value as number)}
+                    min={5}
+                    max={50}
+                    marks
+                    step={5}
+                  />
+                </Box>
+              )}
+
+              {localSettings.gridVisible && (
+                <Box>
+                  <Typography gutterBottom>
+                    Кількість поділок: {localSettings.gridDivisions}
+                  </Typography>
+                  <Slider
+                    value={localSettings.gridDivisions}
+                    onChange={(_, value) => handleSettingChange('gridDivisions', value as number)}
+                    min={5}
+                    max={50}
+                    marks
+                    step={5}
+                  />
+                </Box>
+              )}
+
+              <Divider />
+
+              <FormControl fullWidth>
+                <InputLabel>Якість рендерингу</InputLabel>
+                <Select
+                  value={localSettings.renderQuality}
+                  label="Якість рендерингу"
+                  onChange={(e) => handleSettingChange('renderQuality', e.target.value as 'low' | 'medium' | 'high')}
+                >
+                  <MenuItem value="low">Низька</MenuItem>
+                  <MenuItem value="medium">Середня</MenuItem>
+                  <MenuItem value="high">Висока</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={localSettings.shadows}
+                    onChange={(e) => handleSettingChange('shadows', e.target.checked)}
+                  />
+                }
+                label="Увімкнути тіні"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={localSettings.antialiasing}
+                    onChange={(e) => handleSettingChange('antialiasing', e.target.checked)}
+                  />
+                }
+                label="Увімкнути згладжування"
+              />
             </Stack>
           )}
         </Box>
@@ -268,6 +393,39 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           </Stack>
         </Paper>
       </Box>
+
+      {/* Success Message */}
+      <Snackbar
+        open={showSuccessMessage}
+        autoHideDuration={2000}
+        onClose={() => setShowSuccessMessage(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" onClose={() => setShowSuccessMessage(false)}>
+          Налаштування збережено
+        </Alert>
+      </Snackbar>
+
+      {/* Clear Data Dialog */}
+      <Dialog
+        open={showClearDialog}
+        onClose={() => setShowClearDialog(false)}
+      >
+        <DialogTitle>Очистити всі дані?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Ви впевнені, що хочете очистити всі дані? Ця дія незворотна і видалить всі налаштування та збережені дані.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowClearDialog(false)}>
+            Скасувати
+          </Button>
+          <Button onClick={confirmClearData} color="error" variant="contained">
+            Очистити
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
