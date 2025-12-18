@@ -8,11 +8,16 @@ function useSceneTree() {
 
   // Мемоізуємо updateTree функцію
   const updateTree = useCallback((newData: CollectionElementProps[]) => {
-    // Перевіряємо, чи дані дійсно змінилися
-    if (JSON.stringify(newData) !== JSON.stringify(treeData)) {
-      setTreeData(newData);
-    }
-  }, [treeData]); // Залежність від treeData потрібна для порівняння
+    setTreeData(prev => {
+      // Перевіряємо, чи дані дійсно змінилися
+      const prevString = JSON.stringify(prev);
+      const newString = JSON.stringify(newData);
+      if (prevString !== newString) {
+        return newData;
+      }
+      return prev;
+    });
+  }, []);
 
   // Мемоізуємо значення, що повертаються
   const value = useMemo(() => ({

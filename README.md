@@ -145,7 +145,7 @@ logger.debug('CONTEXT', 'Debug інформація');
 - **React 19** - UI бібліотека
 - **Three.js** - 3D графіка
 - **TypeScript** - типізація
-- **Tailwind CSS** - стилізація
+- **Material UI (MUI)** - UI компоненти з темною сучасною темою
 - **@google/genai** - офіційний SDK для роботи з Gemini API
 
 ## Ліцензія

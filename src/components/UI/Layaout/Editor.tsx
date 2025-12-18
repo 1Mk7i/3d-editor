@@ -8,27 +8,31 @@ import { useWindowManager } from '@/hooks/useWindowManager';
 import { useSceneManager } from '@/hooks/useSceneManager';
 import { createContextMenuItems } from '@/config/contextMenuConfig';
 import * as THREE from 'three';
-import { Menu } from '@/components/UI/Menu/Menu';
 import useSceneTree from '@/hooks/useSceneTree';
-import { Button } from '@/components/UI/Button/Button';
 import { Window } from '@/components/Modals/Window/Window';
 import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
 import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
 import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
+import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { Settings as SettingsIcon, SmartToy as AIIcon } from '@mui/icons-material';
 
 const Editor: React.FC = () => {
     const contextMenu = useContextMenu();
     const windowManager = useWindowManager();
     const sceneManager = useSceneManager();
     const sceneTree = useSceneTree();
+    const [isMounted, setIsMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     React.useEffect(() => {
         const tree = sceneManager.getTreeScene();
-        if (JSON.stringify(tree) !== JSON.stringify(sceneTree.treeData)) {
-            sceneTree.updateTree(tree);
-        }
-    }, [sceneManager.objects, sceneManager.getTreeScene, sceneTree]);
+        sceneTree.updateTree(tree);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sceneManager.objects]);
 
     const handleSettingsClick = React.useCallback(() => {
         windowManager.openWindow('settings', {
@@ -60,27 +64,112 @@ const Editor: React.FC = () => {
         }
     }, [sceneManager]);
 
+    const handleUpdateObject = React.useCallback((id: string, updates: {
+        name?: string;
+        position?: { x: number; y: number; z: number };
+        rotation?: { x: number; y: number; z: number };
+        color?: number;
+        materialType?: 'standard' | 'wireframe' | 'points';
+    }) => {
+        const object = sceneManager.objects.find(obj => obj.id === id);
+        if (!object) return;
+
+        const mesh = object.mesh as THREE.Mesh;
+
+        // Оновлення назви, позиції та обертання через updateObject для синхронізації зі станом
+        if (updates.name !== undefined || updates.position || updates.rotation) {
+            sceneManager.updateObject(id, {
+                name: updates.name,
+                position: updates.position,
+                rotation: updates.rotation,
+            });
+        }
+
+        // Оновлення кольору
+        if (updates.color !== undefined) {
+            const material = mesh.material as THREE.MeshStandardMaterial | THREE.PointsMaterial;
+            if (material && 'color' in material) {
+                material.color.setHex(updates.color);
+            }
+        }
+
+        // Оновлення типу матеріалу
+        if (updates.materialType) {
+            const currentMaterial = mesh.material as THREE.MeshStandardMaterial;
+            if (currentMaterial) {
+                if (updates.materialType === 'wireframe') {
+                    currentMaterial.wireframe = true;
+                } else if (updates.materialType === 'points') {
+                    // Для точок використовуємо PointsMaterial
+                    if (!(currentMaterial instanceof THREE.PointsMaterial)) {
+                        const pointsMaterial = new THREE.PointsMaterial({
+                            color: currentMaterial.color.getHex(),
+                            size: 0.1,
+                        });
+                        mesh.material = pointsMaterial;
+                    }
+                } else {
+                    // Повертаємо до стандартного матеріалу
+                    if (mesh.material instanceof THREE.PointsMaterial) {
+                        const standardMaterial = new THREE.MeshStandardMaterial({
+                            color: mesh.material.color.getHex(),
+                        });
+                        mesh.material = standardMaterial;
+                    } else {
+                        currentMaterial.wireframe = false;
+                    }
+                }
+            }
+        }
+    }, [sceneManager.objects]);
+
+    if (!isMounted) {
+        return null;
+    }
+
     return (
-        <div 
-            className="relative w-screen h-screen"
+        <Box
+            component="div"
+            sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: 'background.default',
+                overflow: 'hidden',
+            }}
             onContextMenu={contextMenu.showContextMenu}
         >
-            <Menu 
-                variant='primary'
-                title="3D Editor"
-                position='top'
-                size='large'
-                elevation={2}
-            >    
-                <Button variant="menu" size='small' onClick={handleSettingsClick}>
-                    Налаштування
-                </Button>
-                <Button variant="menu" size='small' onClick={handleChatClick}>
-                    AI
-                </Button>
-            </Menu>
+            <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+                <Toolbar>
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'text.primary' }}>
+                        3D Editor
+                    </Typography>
+                    <Button
+                        color="inherit"
+                        startIcon={<SettingsIcon />}
+                        onClick={handleSettingsClick}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        Налаштування
+                    </Button>
+                    <Button
+                        color="inherit"
+                        startIcon={<AIIcon />}
+                        onClick={handleChatClick}
+                        sx={{ color: 'text.primary' }}
+                    >
+                        AI
+                    </Button>
+                </Toolbar>
+            </AppBar>
 
-            <div className="flex flex-1">
+            <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', minWidth: 0 }}>
                 <LeftMenu 
                     isEditMode={sceneManager.isEditMode}
                     selectedObjectId={sceneManager.selectedObjectId}
@@ -91,7 +180,7 @@ const Editor: React.FC = () => {
                     onColorChange={handleColorChange}
                 />
 
-                <div className="flex-1 relative">
+                <Box sx={{ flex: 1, position: 'relative', minWidth: 0, overflow: 'hidden' }}>
                     <ThreeScene
                         objects={sceneManager.objects}
                         selectObject={sceneManager.selectObject}
@@ -100,13 +189,17 @@ const Editor: React.FC = () => {
                         isEditMode={sceneManager.isEditMode}
                         transformMode={sceneManager.transformMode}
                     />
-                </div>
+                </Box>
 
                 <RightMenu 
                     treeData={sceneTree.treeData}
                     onUpdateTree={sceneTree.updateTree}
+                    selectedObjectId={sceneManager.selectedObjectId}
+                    objects={sceneManager.objects}
+                    onSelectObject={sceneManager.selectObject}
+                    onUpdateObject={handleUpdateObject}
                 />
-            </div>
+            </Box>
 
             <ContextMenu
                 isVisible={contextMenu.isVisible}
@@ -168,7 +261,7 @@ const Editor: React.FC = () => {
                 }
                 return null;
             })}
-        </div>
+        </Box>
     );
 };
 

@@ -1,17 +1,22 @@
 'use client';
 
-import React from 'react';
-import { Menu } from '@/components/UI/Menu/Menu';
-import { Button } from '@/components/UI/Button/Button';
+import React, { useCallback } from 'react';
 import * as THREE from 'three';
-
-// Створіть компоненти іконок або використовуйте напряму
-const MoveIcon = () => <img src="/assets/move.svg" alt="Move" width={20} height={20} />
-const RotateIcon = () => <img src="/assets/rotate.svg" alt="Rotate" width={20} height={20} />
-const ScaleIcon = () => <img src="/assets/scale.svg" alt="Scale" width={20} height={20} />
-const CreateIcon = () => <img src="/assets/create.svg" alt="Create" width={20} height={20} />
-const EditIcon = () => <img src="/assets/edit.svg" alt="Edit" width={20} height={20} />
-const DeleteIcon = () => <img src="/assets/delete.svg" alt="Delete" width={20} height={20} />
+import {
+  Box,
+  Paper,
+  IconButton,
+  Tooltip,
+  Divider,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  OpenWith as MoveIcon,
+  RotateRight as RotateIcon,
+  AspectRatio as ScaleIcon,
+} from '@mui/icons-material';
 
 interface LeftMenuProps {
     isEditMode: boolean;
@@ -31,26 +36,62 @@ const createNewMesh = () => {
 };
 
 const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMenuProps['onSetTransformMode'] }) => {
+    const handleTranslate = useCallback(() => {
+        onSetTransformMode('translate');
+    }, [onSetTransformMode]);
+
+    const handleRotate = useCallback(() => {
+        onSetTransformMode('rotate');
+    }, [onSetTransformMode]);
+
+    const handleScale = useCallback(() => {
+        onSetTransformMode('scale');
+    }, [onSetTransformMode]);
+
     return (
         <>
-            <Button
-                variant="secondary"
-                icon={<MoveIcon />}
-                onClick={() => onSetTransformMode('translate')}
-                size='extraLarge'
-            />
-            <Button
-                variant="secondary"
-                icon={<RotateIcon />}
-                onClick={() => onSetTransformMode('rotate')}
-                size='extraLarge'
-            />
-            <Button
-                variant="secondary"
-                icon={<ScaleIcon />}
-                onClick={() => onSetTransformMode('scale')}
-                size='extraLarge'
-            />
+            <Tooltip title="Переміщення">
+                <IconButton
+                    onClick={handleTranslate}
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        '&:active': { transform: 'scale(0.95)' },
+                    }}
+                >
+                    <MoveIcon fontSize="large" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Обертання">
+                <IconButton
+                    onClick={handleRotate}
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        '&:active': { transform: 'scale(0.95)' },
+                    }}
+                >
+                    <RotateIcon fontSize="large" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Масштабування">
+                <IconButton
+                    onClick={handleScale}
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        '&:active': { transform: 'scale(0.95)' },
+                    }}
+                >
+                    <ScaleIcon fontSize="large" />
+                </IconButton>
+            </Tooltip>
         </>
     );
 };
@@ -64,47 +105,106 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
     onRemoveObject,
     onColorChange
 }) => {
+    const handleAddObject = useCallback(() => {
+        onAddObject(createNewMesh());
+    }, [onAddObject]);
+
+    const handleRemoveObject = useCallback(() => {
+        if (selectedObjectId) {
+            onRemoveObject(selectedObjectId);
+        }
+    }, [selectedObjectId, onRemoveObject]);
+
     return (
-        <Menu
-            position='left'
-            variant='secondary'
+        <Paper
             elevation={0}
-            title="Left Menu"
-            orientation='vertical'
+            sx={{
+                width: 80,
+                minWidth: 80,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                p: 1.5,
+                borderRadius: 0,
+                borderRight: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+                flexShrink: 0,
+            }}
         >
+            <Tooltip title="Додати об'єкт" placement="right">
+                <IconButton
+                    onClick={handleAddObject}
+                    color="primary"
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&:active': { transform: 'scale(0.95)' },
+                    }}
+                >
+                    <AddIcon fontSize="large" />
+                </IconButton>
+            </Tooltip>
 
-            <Button 
-                onClick={() => onAddObject(createNewMesh())}
-                icon={<CreateIcon />}
-                size='extraLarge'
-            />
-            <Button
-                onClick={onToggleEditMode}
-                icon={<EditIcon />}
-                size='extraLarge'
-                variant={isEditMode ? 'success' : 'primary'}
-            />
+            <Divider sx={{ width: '100%' }} />
 
-            {isEditMode && <TransformControls onSetTransformMode={onSetTransformMode} />}
+            {selectedObjectId && (
+                <>
+                    <Tooltip title={isEditMode ? "Вийти з режиму редагування" : "Режим редагування"} placement="right">
+                        <IconButton
+                            onClick={onToggleEditMode}
+                            color={isEditMode ? 'success' : 'default'}
+                            sx={{
+                                width: 56,
+                                height: 56,
+                                bgcolor: isEditMode ? 'success.main' : 'background.default',
+                                color: isEditMode ? 'success.contrastText' : 'text.primary',
+                                '&:hover': {
+                                    bgcolor: isEditMode ? 'success.dark' : 'action.hover',
+                                },
+                                '&:active': { transform: 'scale(0.95)' },
+                            }}
+                        >
+                            <EditIcon fontSize="large" />
+                        </IconButton>
+                    </Tooltip>
 
-            <Button
-                variant="danger"
-                icon={<DeleteIcon />}
-                size='extraLarge'
-                onClick={() => {
-                    if (selectedObjectId) {
-                        onRemoveObject(selectedObjectId);
-                    }
-                }}
-            />
-            {/* <Button
-                onClick={onColorChange}
-                variant="secondary"
-                size='extraLarge'
-            >
-                Change Random Color
-            </Button> */}
+                    {isEditMode && (
+                        <>
+                            <Divider sx={{ width: '100%' }} />
+                            <TransformControls onSetTransformMode={onSetTransformMode} />
+                        </>
+                    )}
+                </>
+            )}
 
-        </Menu>
+            <Divider sx={{ width: '100%', mt: 'auto' }} />
+
+            <Tooltip title="Видалити об'єкт" placement="right">
+                <IconButton
+                    onClick={handleRemoveObject}
+                    disabled={!selectedObjectId}
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'error.main',
+                        color: 'error.contrastText',
+                        '&:hover': { bgcolor: 'error.dark' },
+                        '&:disabled': {
+                            bgcolor: 'action.disabledBackground',
+                            color: 'action.disabled',
+                        },
+                        '&:active': { transform: 'scale(0.95)' },
+                    }}
+                >
+                    <DeleteIcon fontSize="large" />
+                </IconButton>
+            </Tooltip>
+        </Paper>
     );
 };

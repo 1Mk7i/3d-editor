@@ -1,7 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import './Settings.css';
+import {
+  Box,
+  Paper,
+  Typography,
+  Tabs,
+  Tab,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormControlLabel,
+  Switch,
+  Button,
+  Slider,
+  Divider,
+  Stack,
+} from '@mui/material';
+import {
+  Palette as PaletteIcon,
+  Settings as SettingsIcon,
+  Lock as LockIcon,
+} from '@mui/icons-material';
 
 export interface SettingsProps {
   onClose?: () => void;
@@ -18,7 +40,7 @@ interface SettingsData {
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const [settings, setSettings] = useState<SettingsData>({
-    theme: 'light',
+    theme: 'dark',
     language: 'uk',
     fontSize: 14,
     animations: true,
@@ -26,7 +48,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     autoSave: true,
   });
 
-  const [activeTab, setActiveTab] = useState('appearance');
+  const [activeTab, setActiveTab] = useState(0);
 
   const handleSettingChange = <K extends keyof SettingsData>(
     key: K,
@@ -36,7 +58,6 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   const handleSave = () => {
-    // Тут можна зберегти налаштування в localStorage або відправити на сервер
     localStorage.setItem('app-settings', JSON.stringify(settings));
     console.log('Налаштування збережено:', settings);
     onClose?.();
@@ -44,7 +65,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
   const handleReset = () => {
     setSettings({
-      theme: 'light',
+      theme: 'dark',
       language: 'uk',
       fontSize: 14,
       animations: true,
@@ -53,165 +74,201 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     });
   };
 
-  const tabs = [
-    { id: 'appearance', label: 'Вигляд', icon: '🎨' },
-    { id: 'behavior', label: 'Поведінка', icon: '⚙️' },
-    { id: 'privacy', label: 'Приватність', icon: '🔒' },
-  ];
-
-  const renderAppearanceTab = () => (
-    <div className="settings-tab-content">
-      <div className="settings-group">
-        <h3>Тема</h3>
-        <div className="settings-option">
-          <label>Оберіть тему:</label>
-          <select
-            value={settings.theme}
-            onChange={(e) => handleSettingChange('theme', e.target.value as 'light' | 'dark' | 'auto')}
-          >
-            <option value="light">Світла</option>
-            <option value="dark">Темна</option>
-            <option value="auto">Автоматично</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <h3>Шрифт</h3>
-        <div className="settings-option">
-          <label>Розмір шрифту:</label>
-          <div className="range-input">
-            <input
-              type="range"
-              min="10"
-              max="20"
-              value={settings.fontSize}
-              onChange={(e) => handleSettingChange('fontSize', parseInt(e.target.value))}
-            />
-            <span>{settings.fontSize}px</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <h3>Мова</h3>
-        <div className="settings-option">
-          <label>Мова інтерфейсу:</label>
-          <select
-            value={settings.language}
-            onChange={(e) => handleSettingChange('language', e.target.value)}
-          >
-            <option value="uk">Українська</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderBehaviorTab = () => (
-    <div className="settings-tab-content">
-      <div className="settings-group">
-        <h3>Анімації</h3>
-        <div className="settings-option">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={settings.animations}
-              onChange={(e) => handleSettingChange('animations', e.target.checked)}
-            />
-            Увімкнути анімації
-          </label>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <h3>Автозбереження</h3>
-        <div className="settings-option">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={settings.autoSave}
-              onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
-            />
-            Автоматично зберігати зміни
-          </label>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPrivacyTab = () => (
-    <div className="settings-tab-content">
-      <div className="settings-group">
-        <h3>Сповіщення</h3>
-        <div className="settings-option">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={settings.notifications}
-              onChange={(e) => handleSettingChange('notifications', e.target.checked)}
-            />
-            Увімкнути сповіщення
-          </label>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <h3>Дані</h3>
-        <div className="settings-option">
-          <button className="danger-button" onClick={() => {
-            localStorage.clear();
-            alert('Всі дані очищено');
-          }}>
-            Очистити всі дані
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const handleClearData = () => {
+    if (window.confirm('Ви впевнені, що хочете очистити всі дані?')) {
+      localStorage.clear();
+      alert('Всі дані очищено');
+    }
+  };
 
   return (
-    <div className="settings-container">
-      <div className="settings-sidebar">
-        <div className="settings-tabs">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+    <Box sx={{ display: 'flex', height: '100%', bgcolor: 'background.default' }}>
+      {/* Sidebar */}
+      <Paper
+        elevation={0}
+        sx={{
+          width: 200,
+          borderRadius: 0,
+          borderRight: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Tabs
+          orientation="vertical"
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          sx={{
+            borderRight: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              minHeight: 64,
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              px: 2,
+            },
+          }}
+        >
+          <Tab
+            icon={<PaletteIcon />}
+            iconPosition="start"
+            label="Вигляд"
+            sx={{ textTransform: 'none' }}
+          />
+          <Tab
+            icon={<SettingsIcon />}
+            iconPosition="start"
+            label="Поведінка"
+            sx={{ textTransform: 'none' }}
+          />
+          <Tab
+            icon={<LockIcon />}
+            iconPosition="start"
+            label="Приватність"
+            sx={{ textTransform: 'none' }}
+          />
+        </Tabs>
+      </Paper>
 
-      <div className="settings-content">
-        <div className="settings-header">
-          <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
-        </div>
+      {/* Content */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography variant="h5">
+            {activeTab === 0 && 'Вигляд'}
+            {activeTab === 1 && 'Поведінка'}
+            {activeTab === 2 && 'Приватність'}
+          </Typography>
+        </Paper>
 
-        {activeTab === 'appearance' && renderAppearanceTab()}
-        {activeTab === 'behavior' && renderBehaviorTab()}
-        {activeTab === 'privacy' && renderPrivacyTab()}
+        <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+          {activeTab === 0 && (
+            <Stack spacing={3}>
+              <FormControl fullWidth>
+                <InputLabel>Тема</InputLabel>
+                <Select
+                  value={settings.theme}
+                  label="Тема"
+                  onChange={(e) => handleSettingChange('theme', e.target.value as 'light' | 'dark' | 'auto')}
+                >
+                  <MenuItem value="light">Світла</MenuItem>
+                  <MenuItem value="dark">Темна</MenuItem>
+                  <MenuItem value="auto">Автоматично</MenuItem>
+                </Select>
+              </FormControl>
 
-        <div className="settings-footer">
-          <button className="secondary-button" onClick={handleReset}>
+              <Box>
+                <Typography gutterBottom>
+                  Розмір шрифту: {settings.fontSize}px
+                </Typography>
+                <Slider
+                  value={settings.fontSize}
+                  onChange={(_, value) => handleSettingChange('fontSize', value as number)}
+                  min={10}
+                  max={20}
+                  marks
+                  step={1}
+                />
+              </Box>
+
+              <FormControl fullWidth>
+                <InputLabel>Мова інтерфейсу</InputLabel>
+                <Select
+                  value={settings.language}
+                  label="Мова інтерфейсу"
+                  onChange={(e) => handleSettingChange('language', e.target.value)}
+                >
+                  <MenuItem value="uk">Українська</MenuItem>
+                  <MenuItem value="en">English</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          )}
+
+          {activeTab === 1 && (
+            <Stack spacing={3}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.animations}
+                    onChange={(e) => handleSettingChange('animations', e.target.checked)}
+                  />
+                }
+                label="Увімкнути анімації"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.autoSave}
+                    onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
+                  />
+                }
+                label="Автоматично зберігати зміни"
+              />
+            </Stack>
+          )}
+
+          {activeTab === 2 && (
+            <Stack spacing={3}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.notifications}
+                    onChange={(e) => handleSettingChange('notifications', e.target.checked)}
+                  />
+                }
+                label="Увімкнути сповіщення"
+              />
+
+              <Divider />
+
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleClearData}
+                fullWidth
+              >
+                Очистити всі дані
+              </Button>
+            </Stack>
+          )}
+        </Box>
+
+        {/* Footer */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderTop: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Button variant="outlined" onClick={handleReset}>
             Скинути
-          </button>
-          <div className="button-group">
-            <button className="secondary-button" onClick={onClose}>
+          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button variant="outlined" onClick={onClose}>
               Скасувати
-            </button>
-            <button className="primary-button" onClick={handleSave}>
+            </Button>
+            <Button variant="contained" onClick={handleSave}>
               Зберегти
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </Button>
+          </Stack>
+        </Paper>
+      </Box>
+    </Box>
   );
 };
 

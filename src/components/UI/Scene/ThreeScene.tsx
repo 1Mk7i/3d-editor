@@ -93,7 +93,7 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
 
 const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode }: ThreeSceneProps) => {
   return (
-    <Canvas style={{ width: '100vw', height: '100vh' }}>
+    <Canvas style={{ width: '100%', height: '100%' }}>
       <SceneContent 
         objects={objects}
         selectObject={selectObject}

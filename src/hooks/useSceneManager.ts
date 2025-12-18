@@ -26,16 +26,24 @@ export function useSceneManager() {
   }, []);
 
   const getTreeScene = useCallback(() => {
-    const traverseObject = (obj: THREE.Object3D): any => {
+    const traverseObject = (obj: THREE.Object3D, collectionObj?: CollectionElementProps): any => {
+      // Використовуємо name з CollectionElementProps, якщо він є, інакше з mesh
+      const name = collectionObj?.name || obj.name || 'Unnamed Object';
+      
       return {
         id: obj.uuid,
-        name: obj.name,
+        name: name,
         type: obj.type,
         shape: (obj as THREE.Mesh).geometry ? (obj as THREE.Mesh).geometry.type : null,
-        children: obj.children.map(traverseObject),
+        children: obj.children.map(child => {
+          // Знаходимо відповідний collection об'єкт для дочірнього елемента
+          const childCollectionObj = collectionObj?.children?.find(c => c.id === child.uuid);
+          return traverseObject(child, childCollectionObj);
+        }),
       };
     };
-    return objects.map(obj => traverseObject(obj.mesh));
+    
+    return objects.map(obj => traverseObject(obj.mesh, obj));
   }, [objects]);
 
   // Видаляє об'єкт зі сцени
@@ -93,6 +101,39 @@ export function useSceneManager() {
     }
   }, [objects]);
 
+  // Оновлює об'єкт (назву, позицію, обертання тощо)
+  const updateObject = useCallback((id: string, updates: {
+    name?: string;
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number };
+  }) => {
+    setObjects(prev => prev.map(obj => {
+      if (obj.id === id) {
+        const updatedObj = { ...obj };
+        const mesh = obj.mesh as THREE.Mesh;
+
+        // Оновлення назви
+        if (updates.name !== undefined) {
+          updatedObj.name = updates.name;
+          mesh.name = updates.name;
+        }
+
+        // Оновлення позиції
+        if (updates.position) {
+          mesh.position.set(updates.position.x, updates.position.y, updates.position.z);
+        }
+
+        // Оновлення обертання
+        if (updates.rotation) {
+          mesh.rotation.set(updates.rotation.x, updates.rotation.y, updates.rotation.z);
+        }
+
+        return updatedObj;
+      }
+      return obj;
+    }));
+  }, []);
+
 
 
   return useMemo(() => ({
@@ -107,6 +148,7 @@ export function useSceneManager() {
     toggleEditMode,
     setTransformMode: setTransformModeHandler,
     changeObjectColor,
+    updateObject,
     getTreeScene,
   }), [
     objects,
@@ -120,6 +162,7 @@ export function useSceneManager() {
     toggleEditMode,
     setTransformModeHandler,
     changeObjectColor,
+    updateObject,
     getTreeScene,
   ]);
 }

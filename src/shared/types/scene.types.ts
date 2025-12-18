@@ -35,6 +35,11 @@ export interface SceneManager {
   toggleEditMode: () => void;
   setTransformMode: (mode: TransformMode) => void;
   changeObjectColor: (id: string, color: number) => void;
+  updateObject: (id: string, updates: {
+    name?: string;
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number };
+  }) => void;
   getTreeScene: () => ObjectTreeNode[];
 }
 

@@ -1,14 +1,32 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import './Chat.css';
 import { ChatProps } from './types';
-import Input from '@/components/UI/Input/Input';
-import { Button } from '@/components/UI/Button/Button';
 import { useChat } from '@/hooks/useChat';
 import { CONNECTION_STATUS } from '@/shared/constants/gemini.constants';
 import { GEMINI_MODELS } from '@/shared/constants/gemini.constants';
-import clsx from 'clsx';
+import {
+  Box,
+  Paper,
+  TextField,
+  IconButton,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  CircularProgress,
+  Alert,
+  Tooltip,
+} from '@mui/material';
+import {
+  Send as SendIcon,
+  ContentCopy as CopyIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 export const Chat: React.FC<ChatProps> = ({ onClose }) => {
   const {
@@ -21,8 +39,8 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<number | string | null>(null);
+  const theme = useTheme();
 
   // Автоматичне прокручування до останнього повідомлення
   useEffect(() => {
@@ -31,19 +49,12 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     }
   }, [chatState.messages, chatState.isLoading]);
 
-  const SendIcon = () => <img src="/assets/send.svg" alt="Send" width={20} height={20} />;
-
-  const CopyIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5.5 4.5V1.5C5.5 1.22386 5.72386 1 6 1H12.5C12.7761 1 13 1.22386 13 1.5V8.5C13 8.77614 12.7761 9 12.5 9H9.5V12.5C9.5 12.7761 9.27614 13 9 13H2.5C2.22386 13 2 12.7761 2 12.5V5.5C2 5.22386 2.22386 5 2.5 5H5.5V4.5ZM6 2V4.5C6 4.77614 6.22386 5 6.5 5H9V8H12.5V2H6ZM3 6V12H8.5V6H3Z" fill="currentColor"/>
-    </svg>
-  );
-
-  const CheckIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }, [handleSendMessage]);
 
   const handleCopyMessage = useCallback(async (text: string, messageId: number | string) => {
     try {
@@ -74,12 +85,18 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     }
   }, []);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  const getConnectionStatusColor = () => {
+    switch (chatState.connectionStatus) {
+      case CONNECTION_STATUS.CONNECTING:
+        return 'warning';
+      case CONNECTION_STATUS.CONNECTED:
+        return 'success';
+      case CONNECTION_STATUS.ERROR:
+        return 'error';
+      default:
+        return 'default';
     }
-  }, [handleSendMessage]);
+  };
 
   const getConnectionStatusText = () => {
     switch (chatState.connectionStatus) {
@@ -93,21 +110,6 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
         return 'Відключено';
       default:
         return 'Не підключено';
-    }
-  };
-
-  const getConnectionStatusClass = () => {
-    switch (chatState.connectionStatus) {
-      case CONNECTION_STATUS.CONNECTING:
-        return 'status-connecting';
-      case CONNECTION_STATUS.CONNECTED:
-        return 'status-connected';
-      case CONNECTION_STATUS.ERROR:
-        return 'status-error';
-      case CONNECTION_STATUS.DISCONNECTED:
-        return 'status-disconnected';
-      default:
-        return 'status-idle';
     }
   };
 
@@ -125,126 +127,270 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     : GEMINI_MODELS;
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <div className="chat-header-info">
-          <h2 style={{ color: '#ffffff', margin: 0 }}>AI Чат</h2>
-          <div className="chat-status">
-            <span className={clsx('status-indicator', getConnectionStatusClass())} />
-            <span className="status-text">{getConnectionStatusText()}</span>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+      }}
+    >
+      {/* Header */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          borderRadius: 0,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Box>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            AI Чат
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={getConnectionStatusText()}
+              color={getConnectionStatusColor() as any}
+              size="small"
+              sx={{ height: 20, fontSize: '0.7rem' }}
+            />
             {chatState.connectionStatus === CONNECTION_STATUS.ERROR && (
-              <Button
-                onClick={retryConnection}
-                variant="secondary"
+              <IconButton
                 size="small"
-                className="retry-button"
+                onClick={retryConnection}
+                sx={{ ml: 1 }}
               >
-                Повторити
-              </Button>
+                <Typography variant="caption">Повторити</Typography>
+              </IconButton>
             )}
-          </div>
-        </div>
-        <Button 
-          onClick={onClose} 
-          className="close-button"
-          variant="secondary"
-          size="small"
-        >
-          Закрити
-        </Button>
-      </div>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </Paper>
 
-      <div className="chat-model-selector">
-        <label htmlFor="model-select" className="model-label">
-          Модель:
-        </label>
-        <select
-          id="model-select"
-          value={chatState.selectedModel}
-          onChange={(e) => handleModelChange(e.target.value as any)}
-          className="model-select"
-          disabled={chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED || chatState.isLoading}
-        >
-          {modelsToShow.map((model) => (
-            <option key={model.value} value={model.value}>
-              {model.label}
-            </option>
-          ))}
-        </select>
-        <div className="current-model">
-          <span className="model-name">{getCurrentModelDisplayName()}</span>
-        </div>
-      </div>
+      {/* Model Selector */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.5,
+          borderRadius: 0,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <FormControl fullWidth size="small">
+          <InputLabel id="model-select-label">Модель</InputLabel>
+          <Select
+            labelId="model-select-label"
+            id="model-select"
+            value={chatState.selectedModel}
+            label="Модель"
+            onChange={(e) => handleModelChange(e.target.value as any)}
+            disabled={chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED || chatState.isLoading}
+          >
+            {modelsToShow.map((model) => (
+              <MenuItem key={model.value} value={model.value}>
+                {model.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Paper>
 
-      <div className="chat-messages" id="chat-messages" ref={messagesContainerRef}>
+      {/* Messages */}
+      <Box
+        sx={{
+          flex: 1,
+          overflow: 'auto',
+          p: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
         {chatState.messages.length === 0 ? (
-          <div className="chat-empty">
-            <p>Почніть розмову з AI...</p>
-          </div>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: 'text.secondary',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+              Почніть розмову з AI...
+            </Typography>
+          </Box>
         ) : (
           chatState.messages.map((msg, index) => (
             <React.Fragment key={msg.id}>
-              {index > 0 && <div className="message-divider" />}
-              <div className={clsx('chat-message', msg.sender, { 'message-error': msg.error })}>
-                <div className="message-header">
-                  <div className="message-content">{msg.text}</div>
-                  <button
-                    className={clsx('copy-button', { 'copied': copiedMessageId === msg.id })}
-                    onClick={() => handleCopyMessage(msg.text, msg.id)}
-                    title={copiedMessageId === msg.id ? 'Скопійовано!' : 'Копіювати'}
-                    aria-label="Копіювати повідомлення"
+              {index > 0 && (
+                <Box
+                  sx={{
+                    height: 1,
+                    bgcolor: 'divider',
+                    my: 0.5,
+                  }}
+                />
+              )}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  maxWidth: '80%',
+                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  bgcolor: msg.sender === 'user' ? 'primary.main' : 'background.paper',
+                  border: msg.error ? 1 : 0,
+                  borderColor: msg.error ? 'error.main' : 'transparent',
+                  position: 'relative',
+                  '&:hover .copy-button': {
+                    opacity: 1,
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      flex: 1,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      color: msg.sender === 'user' ? 'primary.contrastText' : 'text.primary',
+                    }}
                   >
-                    {copiedMessageId === msg.id ? <CheckIcon /> : <CopyIcon />}
-                  </button>
-                </div>
+                    {msg.text}
+                  </Typography>
+                  <Tooltip title={copiedMessageId === msg.id ? 'Скопійовано!' : 'Копіювати'}>
+                    <IconButton
+                      size="small"
+                      className="copy-button"
+                      onClick={() => handleCopyMessage(msg.text, msg.id)}
+                      sx={{
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        color: msg.sender === 'user' ? 'primary.contrastText' : 'text.secondary',
+                        '&:hover': {
+                          bgcolor: msg.sender === 'user' 
+                            ? 'rgba(255, 255, 255, 0.2)' 
+                            : 'rgba(255, 255, 255, 0.1)',
+                        },
+                      }}
+                    >
+                      {copiedMessageId === msg.id ? (
+                        <CheckIcon fontSize="small" />
+                      ) : (
+                        <CopyIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
                 {msg.timestamp && (
-                  <div className="message-timestamp">
-                    {new Date(msg.timestamp).toLocaleTimeString('uk-UA', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mt: 0.5,
+                      display: 'block',
+                      opacity: 0.7,
+                      textAlign: msg.sender === 'user' ? 'right' : 'left',
+                      color: msg.sender === 'user' ? 'primary.contrastText' : 'text.secondary',
+                    }}
+                  >
+                    {new Date(msg.timestamp).toLocaleTimeString('uk-UA', {
+                      hour: '2-digit',
+                      minute: '2-digit',
                     })}
-                  </div>
+                  </Typography>
                 )}
-              </div>
+              </Paper>
             </React.Fragment>
           ))
         )}
         {chatState.isLoading && (
-          <div className="chat-message bot loading">
-            <div className="loading-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 1.5,
+              borderRadius: 2,
+              maxWidth: '80%',
+              alignSelf: 'flex-start',
+              bgcolor: 'background.paper',
+            }}
+          >
+            <CircularProgress size={16} />
+          </Paper>
         )}
         <div ref={messagesEndRef} />
-      </div>
+      </Box>
 
+      {/* Error Banner */}
       {chatState.error && chatState.connectionStatus === CONNECTION_STATUS.ERROR && (
-        <div className="chat-error-banner">
+        <Alert severity="error" sx={{ borderRadius: 0 }}>
           {chatState.error}
-        </div>
+        </Alert>
       )}
 
-      <div className="chat-input">
-        <Input
-          type="text"
-          value={chatState.inputText}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          placeholder="Введіть повідомлення..."
-          className="input-field"
-          disabled={chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED || chatState.isLoading}
-        />
-        <Button
-          onClick={handleSendMessage}
-          variant="primary"
-          className="send-button"
-          icon={<SendIcon />}
-          disabled={chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED || chatState.isLoading || !chatState.inputText.trim()}
-        />
-      </div>
-    </div>
+      {/* Input */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.5,
+          borderRadius: 0,
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Введіть повідомлення..."
+            value={chatState.inputText}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            disabled={chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED || chatState.isLoading}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'background.default',
+              },
+            }}
+          />
+          <IconButton
+            color="primary"
+            onClick={handleSendMessage}
+            disabled={
+              chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED ||
+              chatState.isLoading ||
+              !chatState.inputText.trim()
+            }
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+              '&:disabled': {
+                bgcolor: 'action.disabledBackground',
+                color: 'action.disabled',
+              },
+            }}
+          >
+            <SendIcon />
+          </IconButton>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
