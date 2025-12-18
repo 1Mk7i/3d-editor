@@ -1,8 +1,6 @@
-export interface ChatProps {
-  onClose?: () => void;
-}
+/**
+ * Типи для компонента Chat
+ * Основні типи визначені в shared/types/chat.types.ts
+ */
 
-export interface ChatData {
-  messages: { id: number; text: string; sender: 'user' | 'bot' }[];
-  inputText: string;
-}
+export { ChatProps } from '@/shared/types/chat.types';

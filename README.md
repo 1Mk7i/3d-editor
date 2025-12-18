@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 3D Editor
 
-## Getting Started
+Сучасний 3D редактор з інтеграцією AI чату на базі Next.js та Three.js.
 
-First, run the development server:
+## Особливості
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 🎨 3D редактор з підтримкою об'єктів (куб, сфера, циліндр, тор)
+- 🤖 AI чат з підтримкою моделей Gemini
+- 🪟 Система управління вікнами
+- 🎯 Контекстне меню для швидких дій
+- 📊 Дерево сцени для навігації
+
+## Структура проекту
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API endpoints
+│   │   ├── gemini-models/ # Отримання списку моделей
+│   │   └── generate-content/ # Генерація контенту
+│   └── page.tsx           # Головна сторінка
+├── components/            # React компоненти
+│   ├── ContextMenu/       # Контекстне меню
+│   ├── Modals/            # Модальні вікна
+│   └── UI/                # UI компоненти
+│       ├── Button/        # Кнопка
+│       ├── Input/         # Поле вводу
+│       ├── Menu/          # Меню
+│       ├── Scene/         # 3D сцена
+│       └── Layaout/       # Макети
+│           ├── Chat/      # AI чат
+│           └── Settings/  # Налаштування
+├── hooks/                 # React хуки
+│   ├── useChat.ts         # Хук для чату
+│   ├── useSceneManager.ts # Управління сценою
+│   ├── useWindowManager.ts # Управління вікнами
+│   └── ...
+├── shared/                # Спільні ресурси
+│   ├── constants/         # Константи
+│   │   ├── gemini.constants.ts
+│   │   └── scene.constants.ts
+│   ├── services/          # Сервіси для API
+│   │   └── gemini.service.ts
+│   ├── types/             # TypeScript типи
+│   │   ├── chat.types.ts
+│   │   ├── common.types.ts
+│   │   └── scene.types.ts
+│   └── utils/             # Утиліти
+│       └── logger.ts
+└── config/                # Конфігурація
+    └── contextMenuConfig.tsx
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Встановлення
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Клонуйте репозиторій:
+```bash
+git clone <repository-url>
+cd 3d-editor
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Встановіть залежності:
+```bash
+npm install
+```
 
-## Learn More
+3. Створіть файл `.env.local` в корені проекту:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Запустіть сервер розробки:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Відкрийте [http://localhost:3000](http://localhost:3000) у браузері.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Отримання API ключа Gemini
 
-## Deploy on Vercel
+1. Перейдіть на [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Увійдіть у свій Google акаунт
+3. Створіть новий API ключ
+4. Скопіюйте ключ та додайте його до `.env.local`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Використання AI чату
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Натисніть кнопку "AI" у верхньому меню
+2. У вікні чату ви побачите:
+   - Стан підключення (індикатор з кольором)
+   - Випадаючий список для вибору моделі
+   - Поточну модель
+3. Введіть повідомлення та натисніть Enter або кнопку відправки
+4. AI відповість на ваше повідомлення
+
+## Доступні моделі
+
+- **Gemini 2.5 Flash** - найновіша швидка модель (за замовчуванням)
+- **Gemini 1.5 Flash** - швидка та ефективна модель
+- **Gemini 1.5 Pro** - покращена версія Pro
+- **Gemini Pro** - стандартна модель для загального використання
+- **Gemini Pro Vision** - модель з підтримкою зображень
+
+Список моделей автоматично завантажується з API при відкритті чату.
+
+## Стани підключення
+
+- 🟢 **Підключено** - API працює коректно
+- 🟠 **Підключення...** - виконується перевірка підключення
+- 🔴 **Помилка підключення** - проблема з API (можна спробувати повторити)
+- ⚪ **Не підключено** - початковий стан
+
+## Розробка
+
+### Структура коду
+
+Проект організований за принципами:
+- **Розділення відповідальності** - компоненти, хуки, сервіси розділені
+- **Перевикористання** - спільні типи, константи та утиліти в `shared/`
+- **Типізація** - повна підтримка TypeScript
+- **Масштабованість** - легко додавати нові функції
+
+### Додавання нових компонентів
+
+1. Створіть компонент у відповідній папці `src/components/`
+2. Додайте типи у `src/shared/types/` якщо потрібно
+3. Створіть хук у `src/hooks/` для логіки стану
+4. Використовуйте сервіси з `src/shared/services/` для API викликів
+
+### Логування
+
+Використовуйте `logger` з `@/shared/utils/logger`:
+```typescript
+import { logger } from '@/shared/utils/logger';
+
+logger.log('Інформаційне повідомлення');
+logger.error('Помилка');
+logger.warn('Попередження');
+logger.debug('CONTEXT', 'Debug інформація');
+```
+
+## Технології
+
+- **Next.js 15** - React фреймворк
+- **React 19** - UI бібліотека
+- **Three.js** - 3D графіка
+- **TypeScript** - типізація
+- **Tailwind CSS** - стилізація
+- **@google/genai** - офіційний SDK для роботи з Gemini API
+
+## Ліцензія
+
+MIT
