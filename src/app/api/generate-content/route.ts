@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
       topK: 40,
       topP: 0.95,
-      maxOutputTokens: 2048,
+      // Збільшуємо ліміт токенів для великих команд (наприклад, створення складних сцен)
+      maxOutputTokens: 8192,
     };
 
     // Додаємо системну інструкцію якщо вона є
@@ -81,18 +82,61 @@ export async function POST(request: NextRequest) {
     console.error('Помилка при генерації контенту:', error);
     
     let errorMessage = 'Внутрішня помилка сервера';
+    let statusCode = 500;
     
-    if (error?.message) {
+    // Обробка помилок Gemini API - перевіряємо різні формати
+    let apiError = error?.error || error;
+    
+    // Якщо помилка вже в правильному форматі
+    if (apiError) {
+      // Помилка 429 - перевищення квоти
+      if (apiError.code === 429 || 
+          apiError.status === 'RESOURCE_EXHAUSTED' ||
+          (typeof apiError.message === 'string' && apiError.message.includes('quota'))) {
+        statusCode = 429;
+        const quotaInfo = apiError.details?.find((d: any) => 
+          d?.['@type']?.includes('QuotaFailure') || d?.quotaMetric
+        );
+        const retryInfo = apiError.details?.find((d: any) => 
+          d?.['@type']?.includes('RetryInfo') || d?.retryDelay
+        );
+        
+        let retrySeconds = 30;
+        if (retryInfo?.retryDelay) {
+          // Парсимо "30s" або "30.2s" до секунд
+          const retryDelayStr = typeof retryInfo.retryDelay === 'string' 
+            ? retryInfo.retryDelay 
+            : String(retryInfo.retryDelay);
+          const retryMatch = retryDelayStr.match(/(\d+\.?\d*)/);
+          if (retryMatch) {
+            retrySeconds = Math.ceil(parseFloat(retryMatch[1]));
+          }
+        }
+        
+        const limit = quotaInfo?.violations?.[0]?.quotaValue || 
+                     apiError.message?.match(/limit:\s*(\d+)/)?.[1] || 
+                     'невідомо';
+        const model = quotaInfo?.violations?.[0]?.quotaDimensions?.model || 
+                     apiError.message?.match(/model:\s*([^\s,]+)/)?.[1] || 
+                     'модель';
+        
+        errorMessage = `Перевищено денну квоту API Gemini (ліміт: ${limit} запитів/день для ${model}). Спробуйте пізніше або оновіть тарифний план.`;
+        if (retrySeconds > 0) {
+          errorMessage += ` Повтор через ${retrySeconds} секунд.`;
+        }
+      } else {
+        errorMessage = apiError.message || errorMessage;
+        statusCode = apiError.code || statusCode;
+      }
+    } else if (error?.message) {
       errorMessage = error.message;
-    } else if (error?.error?.message) {
-      errorMessage = error.error.message;
     } else if (typeof error === 'string') {
       errorMessage = error;
     }
     
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

@@ -379,16 +379,51 @@ const Editor: React.FC = () => {
                     sceneManager.addObject(mesh, command.name || objectType.name, mesh.type);
                 }
             } else if (command.action === 'delete' && command.objectId) {
-                const objectId = command.objectId === 'selected' 
-                    ? sceneManager.selectedObjectId 
-                    : command.objectId;
+                let objectId: string | null = null;
+                
+                if (command.objectId === 'selected') {
+                    objectId = sceneManager.selectedObjectId;
+                } else {
+                    // Спочатку шукаємо за ID
+                    const foundById = sceneManager.objects.find(obj => obj.id === command.objectId);
+                    if (foundById) {
+                        objectId = foundById.id;
+                    } else {
+                        // Якщо не знайдено за ID, шукаємо за назвою
+                        const foundByName = sceneManager.objects.find(obj => obj.name === command.objectId);
+                        if (foundByName) {
+                            objectId = foundByName.id;
+                            console.log(`Знайдено об'єкт "${command.objectId}" за назвою, використовується ID: ${objectId}`);
+                        }
+                    }
+                }
+                
                 if (objectId) {
                     sceneManager.removeObject(objectId);
+                    console.log(`Об'єкт з ID "${objectId}" видалено`);
+                } else {
+                    console.warn(`Не вдалося знайти об'єкт для видалення: "${command.objectId}"`);
                 }
             } else if (command.action === 'update' && command.objectId) {
-                const objectId = command.objectId === 'selected' 
-                    ? sceneManager.selectedObjectId 
-                    : command.objectId;
+                let objectId: string | null = null;
+                
+                if (command.objectId === 'selected') {
+                    objectId = sceneManager.selectedObjectId;
+                } else {
+                    // Спочатку шукаємо за ID
+                    const foundById = sceneManager.objects.find(obj => obj.id === command.objectId);
+                    if (foundById) {
+                        objectId = foundById.id;
+                    } else {
+                        // Якщо не знайдено за ID, шукаємо за назвою
+                        const foundByName = sceneManager.objects.find(obj => obj.name === command.objectId);
+                        if (foundByName) {
+                            objectId = foundByName.id;
+                            console.log(`Знайдено об'єкт "${command.objectId}" за назвою, використовується ID: ${objectId}`);
+                        }
+                    }
+                }
+                
                 if (objectId) {
                     const updates: any = {};
                     if (command.name) updates.name = command.name;
@@ -403,11 +438,29 @@ const Editor: React.FC = () => {
                     handleUpdateObject(objectId, updates);
                 }
             } else if (command.action === 'select' && command.objectId) {
-                const objectId = command.objectId === 'selected' 
-                    ? sceneManager.selectedObjectId 
-                    : command.objectId;
+                let objectId: string | null = null;
+                
+                if (command.objectId === 'selected') {
+                    objectId = sceneManager.selectedObjectId;
+                } else {
+                    // Спочатку шукаємо за ID
+                    const foundById = sceneManager.objects.find(obj => obj.id === command.objectId);
+                    if (foundById) {
+                        objectId = foundById.id;
+                    } else {
+                        // Якщо не знайдено за ID, шукаємо за назвою
+                        const foundByName = sceneManager.objects.find(obj => obj.name === command.objectId);
+                        if (foundByName) {
+                            objectId = foundByName.id;
+                            console.log(`Знайдено об'єкт "${command.objectId}" за назвою, використовується ID: ${objectId}`);
+                        }
+                    }
+                }
+                
                 if (objectId) {
                     sceneManager.selectObject(objectId);
+                } else {
+                    console.warn(`Не вдалося знайти об'єкт для виділення: "${command.objectId}"`);
                 }
             } else if (command.action === 'clear') {
                 sceneManager.clearSelection();

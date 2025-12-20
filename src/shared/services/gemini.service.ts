@@ -82,10 +82,25 @@ export async function generateContent(
 
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorCode = response.status;
+      
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
-      } catch {
+        
+        // Створюємо більш детальну помилку для 429
+        if (response.status === 429) {
+          const errorObj = new Error(errorMessage);
+          (errorObj as any).code = 429;
+          (errorObj as any).status = 'RESOURCE_EXHAUSTED';
+          throw errorObj;
+        }
+      } catch (innerError: any) {
+        // Якщо це вже наша оброблена помилка, перекидаємо її
+        if (innerError.code === 429) {
+          throw innerError;
+        }
+        
         // Якщо не вдалося розпарсити JSON, використовуємо текст
         try {
           const errorText = await response.text();
@@ -94,7 +109,10 @@ export async function generateContent(
           // Якщо і це не спрацювало, залишаємо стандартне повідомлення
         }
       }
-      throw new Error(errorMessage);
+      
+      const error = new Error(errorMessage);
+      (error as any).code = errorCode;
+      throw error;
     }
 
     const data = await response.json();

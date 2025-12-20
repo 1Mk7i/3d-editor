@@ -45,6 +45,32 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const theme = useTheme();
 
+  // Формуємо інформацію про сцену для агента
+  const getSceneInfo = useCallback((): string => {
+    if (objects.length === 0) {
+      return 'На сцені немає об\'єктів.';
+    }
+
+    const sceneObjects = objects.map((obj, index) => {
+      const mesh = obj.mesh;
+      const position = mesh.position;
+      const color = (mesh as any).material?.color;
+      const colorHex = color ? `#${color.getHexString()}` : 'не вказано';
+      
+      // Додаємо ID об'єкта для команд delete/update/select
+      return `${index + 1}. ${obj.name || 'Unnamed'} (${obj.type || obj.shape || 'unknown'}) - ID: "${obj.id}", позиція: (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}), колір: ${colorHex}`;
+    });
+
+    const selectedObj = selectedObjectId ? objects.find(o => o.id === selectedObjectId) : null;
+    
+    return `На сцені знаходиться ${objects.length} об'єкт(ів):\n${sceneObjects.join('\n')}\n\nВибраний об'єкт: ${selectedObj ? `${selectedObj.name} (ID: "${selectedObj.id}")` : 'немає'}\n\nВАЖЛИВО: Для команд delete, update, select використовуйте поле "objectId" з ID об'єкта з наведеного списку, а не назву!`;
+  }, [objects, selectedObjectId]);
+
+  // Генеруємо промпт з поточною інформацією про сцену (оновлюється при зміні об'єктів)
+  const agentPrompt = React.useMemo(() => {
+    return chatMode === 'agent' ? generateAgentPrompt(getSceneInfo()) : undefined;
+  }, [chatMode, getSceneInfo]);
+
   const {
     chatState,
     availableModels,
@@ -52,7 +78,7 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     handleSendMessage,
     handleModelChange,
     retryConnection,
-  } = useChat(chatMode === 'agent' ? generateAgentPrompt() : undefined);
+  } = useChat(agentPrompt);
 
   // Автоматичне прокручування до останнього повідомлення
   useEffect(() => {
@@ -62,10 +88,40 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   }, [chatState.messages, chatState.isLoading]);
 
   const handleAgentResponse = useCallback((responseText: string) => {
-    if (chatMode === 'agent' && onAgentCommand) {
-      const command = parseAgentCommand(responseText);
-      if (command) {
-        onAgentCommand(command);
+    if (chatMode === 'agent') {
+      // Перевіряємо, чи це команда (JSON) чи інформаційна відповідь (текст)
+      const trimmedResponse = responseText.trim();
+      const isJsonResponse = trimmedResponse.startsWith('{') || trimmedResponse.startsWith('[');
+      
+      if (isJsonResponse && onAgentCommand) {
+        // Це команда - спробуємо розпарсити
+        const isPossiblyTruncated = !trimmedResponse.endsWith(']') && 
+                                     !trimmedResponse.endsWith('}') && 
+                                     trimmedResponse.includes('"action"');
+        
+        if (isPossiblyTruncated) {
+          console.warn('Agent response might be truncated. Length:', responseText.length);
+          console.warn('Last 100 characters:', responseText.slice(-100));
+        }
+        
+        const commands = parseAgentCommand(responseText);
+        if (commands && commands.length > 0) {
+          console.log(`Parsed ${commands.length} commands from agent response`);
+          // Виконуємо всі команди послідовно
+          commands.forEach((command, index) => {
+            // Невелика затримка між командами для коректної обробки
+            setTimeout(() => {
+              onAgentCommand(command);
+            }, index * 50);
+          });
+        } else {
+          console.warn('Failed to parse agent commands from response');
+          console.warn('Response text:', responseText);
+        }
+      } else {
+        // Це інформаційна відповідь - просто відображаємо її в чаті
+        // Відповідь вже додана в чат через handleSendMessage
+        console.log('Agent provided informational response:', responseText);
       }
     }
   }, [chatMode, onAgentCommand]);

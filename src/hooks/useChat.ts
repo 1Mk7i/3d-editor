@@ -40,6 +40,12 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
 
   const [availableModels, setAvailableModels] = useState<GeminiModelInfo[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const systemInstructionRef = useRef<string | undefined>(systemInstruction);
+
+  // Оновлюємо ref при зміні systemInstruction
+  useEffect(() => {
+    systemInstructionRef.current = systemInstruction;
+  }, [systemInstruction]);
 
   // Перевірка підключення та завантаження моделей при ініціалізації
   useEffect(() => {
@@ -124,7 +130,7 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
         userMessage.text,
         chatState.selectedModel,
         history,
-        systemInstruction
+        systemInstructionRef.current
       );
 
       const botMessage: ChatMessage = {
@@ -142,15 +148,38 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
       }));
 
       // Викликаємо callback для обробки відповіді агента
-      if (onAgentResponse && systemInstruction) {
+      if (onAgentResponse && systemInstructionRef.current) {
         onAgentResponse(response.text);
       }
     } catch (error) {
       logger.error('Помилка при відправці повідомлення:', error);
 
+      // Формуємо зрозуміле повідомлення про помилку
+      let userFriendlyMessage = 'Помилка при отриманні відповіді';
+      
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        
+        // Перевіряємо, чи це помилка про перевищення квоти
+        if (errorMessage.includes('429') || 
+            errorMessage.includes('квоти') || 
+            errorMessage.includes('quota') ||
+            errorMessage.includes('RESOURCE_EXHAUSTED')) {
+          userFriendlyMessage = errorMessage.includes('квоти') 
+            ? errorMessage 
+            : 'Перевищено денну квоту API Gemini. Спробуйте пізніше або оновіть тарифний план.';
+        } else if (errorMessage.includes('API ключ')) {
+          userFriendlyMessage = 'Проблема з API ключем. Перевірте налаштування.';
+        } else if (errorMessage.includes('підключення') || errorMessage.includes('connection')) {
+          userFriendlyMessage = 'Помилка підключення до API. Перевірте інтернет-з\'єднання.';
+        } else {
+          userFriendlyMessage = errorMessage;
+        }
+      }
+
       const errorMessage: ChatMessage = {
         id: Date.now() + 1,
-        text: error instanceof Error ? error.message : 'Помилка при отриманні відповіді',
+        text: userFriendlyMessage,
         sender: 'bot',
         timestamp: Date.now(),
         error: true,
@@ -161,12 +190,12 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
         messages: [...prev.messages, errorMessage],
         isLoading: false,
         connectionStatus: CONNECTION_STATUS.ERROR,
-        error: error instanceof Error ? error.message : 'Невідома помилка',
+        error: userFriendlyMessage,
       }));
     } finally {
       abortControllerRef.current = null;
     }
-  }, [chatState.inputText, chatState.messages, chatState.selectedModel, chatState.isLoading, systemInstruction]);
+  }, [chatState.inputText, chatState.messages, chatState.selectedModel, chatState.isLoading]);
 
   const handleModelChange = useCallback((model: GeminiModel) => {
     setChatState(prev => ({ ...prev, selectedModel: model }));

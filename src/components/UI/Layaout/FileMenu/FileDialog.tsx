@@ -40,6 +40,13 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   const [format, setFormat] = useState<FileFormat>('json');
   const [fileName, setFileName] = useState<string>('scene');
 
+  // Скидаємо формат до підтримуваного при зміні операції
+  React.useEffect(() => {
+    if (operation === 'export' && (format === 'fbx' || format === 'dae' || format === '3mf' || format === 'amf')) {
+      setFormat('json');
+    }
+  }, [operation, format]);
+
   const handleConfirm = () => {
     onConfirm(format, fileName);
     onClose();
@@ -52,10 +59,18 @@ export const FileDialog: React.FC<FileDialogProps> = ({
     obj: 'OBJ - Простий формат для 3D моделей',
     stl: 'STL - Формат для 3D друку',
     ply: 'PLY - Формат для зберігання 3D сканувань',
-    fbx: 'FBX - Формат Autodesk для 3D моделей',
-    dae: 'DAE - Collada формат для 3D моделей',
-    '3mf': '3MF - Формат для 3D друку (Microsoft)',
-    amf: 'AMF - Additive Manufacturing Format',
+    fbx: operation === 'export' 
+      ? 'FBX - Підтримується тільки для імпорту' 
+      : 'FBX - Формат Autodesk для 3D моделей',
+    dae: operation === 'export' 
+      ? 'DAE - Підтримується тільки для імпорту' 
+      : 'DAE - Collada формат для 3D моделей',
+    '3mf': operation === 'export' 
+      ? '3MF - Підтримується тільки для імпорту' 
+      : '3MF - Формат для 3D друку (Microsoft)',
+    amf: operation === 'export' 
+      ? 'AMF - Підтримується тільки для імпорту' 
+      : 'AMF - Additive Manufacturing Format',
   };
 
   return (
@@ -94,10 +109,14 @@ export const FileDialog: React.FC<FileDialogProps> = ({
               <MenuItem value="obj">OBJ</MenuItem>
               <MenuItem value="stl">STL</MenuItem>
               <MenuItem value="ply">PLY</MenuItem>
-              <MenuItem value="fbx">FBX</MenuItem>
-              <MenuItem value="dae">DAE (Collada)</MenuItem>
-              <MenuItem value="3mf">3MF</MenuItem>
-              <MenuItem value="amf">AMF</MenuItem>
+              {operation === 'import' && (
+                <>
+                  <MenuItem value="fbx">FBX</MenuItem>
+                  <MenuItem value="dae">DAE (Collada)</MenuItem>
+                  <MenuItem value="3mf">3MF</MenuItem>
+                  <MenuItem value="amf">AMF</MenuItem>
+                </>
+              )}
             </Select>
           </FormControl>
 
