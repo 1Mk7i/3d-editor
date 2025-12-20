@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { model, message, history = [] } = body;
+    const { model, message, history = [], systemInstruction } = body;
 
     if (!model || !message) {
       return NextResponse.json(
@@ -52,15 +52,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Генеруємо контент через новий SDK
+    const config: any = {
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 2048,
+    };
+
+    // Додаємо системну інструкцію якщо вона є
+    if (systemInstruction) {
+      config.systemInstruction = systemInstruction;
+    }
+
     const response = await ai.models.generateContent({
       model: model,
       contents: contents,
-      config: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-      },
+      config: config,
     });
 
     // Отримуємо текст відповіді

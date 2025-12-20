@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChatProps } from './types';
+import { ChatPropsWithSceneManager } from './types';
 import { useChat } from '@/hooks/useChat';
+import { generateAgentPrompt, parseAgentCommand, AgentCommand } from '@/shared/prompts/agentPrompt';
 import { CONNECTION_STATUS } from '@/shared/constants/gemini.constants';
 import { GEMINI_MODELS } from '@/shared/constants/gemini.constants';
 import {
@@ -19,16 +20,31 @@ import {
   CircularProgress,
   Alert,
   Tooltip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Send as SendIcon,
   ContentCopy as CopyIcon,
   Check as CheckIcon,
   Close as CloseIcon,
+  Chat as ChatIcon,
+  SmartToy as AgentIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { ChatMode } from '@/shared/prompts/agentPrompt';
 
-export const Chat: React.FC<ChatProps> = ({ onClose }) => {
+export const Chat: React.FC<ChatPropsWithSceneManager> = ({ 
+  onClose, 
+  onAgentCommand,
+  selectedObjectId,
+  objects = []
+}) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<number | string | null>(null);
+  const [chatMode, setChatMode] = useState<ChatMode>('chat');
+  const theme = useTheme();
+
   const {
     chatState,
     availableModels,
@@ -36,11 +52,7 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     handleSendMessage,
     handleModelChange,
     retryConnection,
-  } = useChat();
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [copiedMessageId, setCopiedMessageId] = useState<number | string | null>(null);
-  const theme = useTheme();
+  } = useChat(chatMode === 'agent' ? generateAgentPrompt() : undefined);
 
   // Автоматичне прокручування до останнього повідомлення
   useEffect(() => {
@@ -49,12 +61,25 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
     }
   }, [chatState.messages, chatState.isLoading]);
 
+  const handleAgentResponse = useCallback((responseText: string) => {
+    if (chatMode === 'agent' && onAgentCommand) {
+      const command = parseAgentCommand(responseText);
+      if (command) {
+        onAgentCommand(command);
+      }
+    }
+  }, [chatMode, onAgentCommand]);
+
+  const handleSend = useCallback(async () => {
+    await handleSendMessage(handleAgentResponse);
+  }, [handleSendMessage, handleAgentResponse]);
+
   const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSend();
     }
-  }, [handleSendMessage]);
+  }, [handleSend]);
 
   const handleCopyMessage = useCallback(async (text: string, messageId: number | string) => {
     try {
@@ -154,7 +179,27 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
           <Typography variant="h6" sx={{ mb: 1 }}>
             AI Чат
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <ToggleButtonGroup
+              value={chatMode}
+              exclusive
+              onChange={(_, newMode) => {
+                if (newMode !== null) {
+                  setChatMode(newMode);
+                }
+              }}
+              size="small"
+              sx={{ mr: 1 }}
+            >
+              <ToggleButton value="chat">
+                <ChatIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                Чат
+              </ToggleButton>
+              <ToggleButton value="agent">
+                <AgentIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                Агент
+              </ToggleButton>
+            </ToggleButtonGroup>
             <Chip
               label={getConnectionStatusText()}
               color={getConnectionStatusColor() as any}
@@ -226,11 +271,21 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
               justifyContent: 'center',
               height: '100%',
               color: 'text.secondary',
+              flexDirection: 'column',
+              gap: 2,
             }}
           >
             <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-              Почніть розмову з AI...
+              {chatMode === 'agent' 
+                ? 'Введіть команду для управління 3D сценою...'
+                : 'Почніть розмову з AI...'}
             </Typography>
+            {chatMode === 'agent' && (
+              <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', px: 2 }}>
+                Приклад: "Створи червоний куб", "Додай сферу на позиції 2, 0, 0", 
+                "Оберни вибраний об'єкт на 90 градусів"
+              </Typography>
+            )}
           </Box>
         ) : (
           chatState.messages.map((msg, index) => (
@@ -369,7 +424,7 @@ export const Chat: React.FC<ChatProps> = ({ onClose }) => {
           />
           <IconButton
             color="primary"
-            onClick={handleSendMessage}
+            onClick={handleSend}
             disabled={
               chatState.connectionStatus !== CONNECTION_STATUS.CONNECTED ||
               chatState.isLoading ||

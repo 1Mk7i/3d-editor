@@ -23,12 +23,12 @@ export interface UseChatReturn {
   chatState: ChatState;
   availableModels: GeminiModelInfo[];
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSendMessage: () => Promise<void>;
+  handleSendMessage: (onAgentResponse?: (text: string) => void) => Promise<void>;
   handleModelChange: (model: GeminiModel) => void;
   retryConnection: () => Promise<void>;
 }
 
-export const useChat = (): UseChatReturn => {
+export const useChat = (systemInstruction?: string): UseChatReturn => {
   const [chatState, setChatState] = useState<ChatState>({
     messages: [],
     inputText: '',
@@ -85,7 +85,7 @@ export const useChat = (): UseChatReturn => {
     setChatState(prev => ({ ...prev, inputText: e.target.value }));
   }, []);
 
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async (onAgentResponse?: (text: string) => void) => {
     if (chatState.inputText.trim() === '' || chatState.isLoading) return;
 
     const userMessage: ChatMessage = {
@@ -123,7 +123,8 @@ export const useChat = (): UseChatReturn => {
       const response = await generateContent(
         userMessage.text,
         chatState.selectedModel,
-        history
+        history,
+        systemInstruction
       );
 
       const botMessage: ChatMessage = {
@@ -139,6 +140,11 @@ export const useChat = (): UseChatReturn => {
         isLoading: false,
         connectionStatus: CONNECTION_STATUS.CONNECTED,
       }));
+
+      // Викликаємо callback для обробки відповіді агента
+      if (onAgentResponse && systemInstruction) {
+        onAgentResponse(response.text);
+      }
     } catch (error) {
       logger.error('Помилка при відправці повідомлення:', error);
 
@@ -160,7 +166,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       abortControllerRef.current = null;
     }
-  }, [chatState.inputText, chatState.messages, chatState.selectedModel, chatState.isLoading]);
+  }, [chatState.inputText, chatState.messages, chatState.selectedModel, chatState.isLoading, systemInstruction]);
 
   const handleModelChange = useCallback((model: GeminiModel) => {
     setChatState(prev => ({ ...prev, selectedModel: model }));

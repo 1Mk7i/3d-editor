@@ -24,7 +24,8 @@ import { ObjectSelectorMenu } from './ObjectSelector/ObjectSelectorMenu';
 import { ObjectSelectorDialog } from './ObjectSelector/ObjectSelectorDialog';
 import { exportToJSON, importFromJSON, createObjectFromData, loadFileAsText, downloadFile, importModelFromFile, exportSceneToFormat } from '@/shared/services/fileService';
 import { saveProject, saveCurrentProject, loadCurrentProject, clearAutoSave } from '@/shared/services/projectService';
-import { ThreeObjectType, createThreeObject } from '@/shared/constants/threeObjects';
+import { ThreeObjectType, createThreeObject, THREE_OBJECT_TYPES } from '@/shared/constants/threeObjects';
+import { AgentCommand, parseAgentCommand } from '@/shared/prompts/agentPrompt';
 
 const Editor: React.FC = () => {
     const contextMenu = useContextMenu();
@@ -300,6 +301,80 @@ const Editor: React.FC = () => {
         sceneManager.addObject(mesh, objectType.name, mesh.type);
     }, [sceneManager]);
 
+    const handleAgentCommand = React.useCallback((command: AgentCommand) => {
+        try {
+            if (command.action === 'create' && command.objectType) {
+                const objectType = THREE_OBJECT_TYPES.find(obj => obj.id === command.objectType);
+                if (objectType) {
+                    const mesh = createThreeObject(objectType);
+                    
+                    // Застосовуємо параметри з команди
+                    if (command.position) {
+                        mesh.position.set(command.position.x, command.position.y, command.position.z);
+                    }
+                    if (command.rotation) {
+                        mesh.rotation.set(command.rotation.x, command.rotation.y, command.rotation.z);
+                    }
+                    if (command.scale) {
+                        mesh.scale.set(command.scale.x, command.scale.y, command.scale.z);
+                    }
+                    if (command.color) {
+                        const material = mesh.material as THREE.MeshStandardMaterial;
+                        material.color.setHex(parseInt(command.color.replace('#', ''), 16));
+                    }
+                    if (command.materialType) {
+                        const currentMaterial = mesh.material as THREE.MeshStandardMaterial;
+                        if (command.materialType === 'wireframe') {
+                            currentMaterial.wireframe = true;
+                        } else if (command.materialType === 'points') {
+                            mesh.material = new THREE.PointsMaterial({
+                                color: currentMaterial.color.getHex(),
+                                size: 0.1,
+                            });
+                        }
+                    }
+                    
+                    sceneManager.addObject(mesh, command.name || objectType.name, mesh.type);
+                }
+            } else if (command.action === 'delete' && command.objectId) {
+                const objectId = command.objectId === 'selected' 
+                    ? sceneManager.selectedObjectId 
+                    : command.objectId;
+                if (objectId) {
+                    sceneManager.removeObject(objectId);
+                }
+            } else if (command.action === 'update' && command.objectId) {
+                const objectId = command.objectId === 'selected' 
+                    ? sceneManager.selectedObjectId 
+                    : command.objectId;
+                if (objectId) {
+                    const updates: any = {};
+                    if (command.name) updates.name = command.name;
+                    if (command.position) updates.position = command.position;
+                    if (command.rotation) updates.rotation = command.rotation;
+                    if (command.scale) updates.scale = command.scale;
+                    if (command.color) {
+                        updates.color = parseInt(command.color.replace('#', ''), 16);
+                    }
+                    if (command.materialType) updates.materialType = command.materialType;
+                    
+                    handleUpdateObject(objectId, updates);
+                }
+            } else if (command.action === 'select' && command.objectId) {
+                const objectId = command.objectId === 'selected' 
+                    ? sceneManager.selectedObjectId 
+                    : command.objectId;
+                if (objectId) {
+                    sceneManager.selectObject(objectId);
+                }
+            } else if (command.action === 'clear') {
+                sceneManager.clearSelection();
+            }
+        } catch (error) {
+            console.error('Помилка при виконанні команди агента:', error);
+        }
+    }, [sceneManager, handleUpdateObject]);
+
     const handleObjectMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
         setObjectMenuAnchor(event.currentTarget);
     }, []);
@@ -530,7 +605,12 @@ const Editor: React.FC = () => {
                             onRestore={() => windowManager.restoreWindow(window.id)}
                             onFocus={() => windowManager.focusWindow(window.id)}
                         >
-                            <Chat onClose={() => windowManager.closeWindow('chat')} />
+                            <Chat 
+                              onClose={() => windowManager.closeWindow('chat')}
+                              onAgentCommand={handleAgentCommand}
+                              selectedObjectId={sceneManager.selectedObjectId}
+                              objects={sceneManager.objects}
+                            />
                         </Window>
                     );
                 }

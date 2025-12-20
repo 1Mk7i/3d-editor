@@ -60,7 +60,8 @@ export async function fetchGeminiModels(): Promise<GeminiModelInfo[]> {
 export async function generateContent(
   message: string,
   model: GeminiModel = DEFAULT_GEMINI_MODEL,
-  history: Array<{ role: 'user' | 'bot'; text: string }> = []
+  history: Array<{ role: 'user' | 'bot'; text: string }> = [],
+  systemInstruction?: string
 ): Promise<GenerateContentResponse> {
   try {
     const response = await fetch('/api/generate-content', {
@@ -75,6 +76,7 @@ export async function generateContent(
           role: msg.role,
           text: msg.text,
         })),
+        systemInstruction,
       }),
     });
 
