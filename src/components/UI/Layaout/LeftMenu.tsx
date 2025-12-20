@@ -21,19 +21,13 @@ import {
 interface LeftMenuProps {
     isEditMode: boolean;
     selectedObjectId: string | null;
-    onAddObject: (mesh: THREE.Mesh) => void;
+    onAddObject: () => void; // Тепер просто callback для відкриття діалогу
     onToggleEditMode: () => void;
     onSetTransformMode: (mode: 'translate' | 'rotate' | 'scale') => void;
     onRemoveObject: (id: string) => void;
     onColorChange: () => void;
 }
 
-const createNewMesh = () => {
-    return new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshStandardMaterial({ color: 'red' })
-    );
-};
 
 const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMenuProps['onSetTransformMode'] }) => {
     const handleTranslate = useCallback(() => {
@@ -106,7 +100,7 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
     onColorChange
 }) => {
     const handleAddObject = useCallback(() => {
-        onAddObject(createNewMesh());
+        onAddObject(); // Відкриваємо діалог вибору об'єкта
     }, [onAddObject]);
 
     const handleRemoveObject = useCallback(() => {

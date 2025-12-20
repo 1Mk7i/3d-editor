@@ -71,6 +71,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       animations: true,
       notifications: true,
       autoSave: true,
+      autoSaveInterval: 30,
       sceneBackgroundColor: '#121212',
       gridVisible: true,
       gridSize: 20,
@@ -224,6 +225,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 label="Увімкнути анімації"
               />
 
+              <Divider />
+
               <FormControlLabel
                 control={
                   <Switch
@@ -233,6 +236,30 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 }
                 label="Автоматично зберігати зміни"
               />
+
+              {localSettings.autoSave && (
+                <Box>
+                  <Typography gutterBottom>
+                    Інтервал автозбереження: {localSettings.autoSaveInterval} секунд
+                  </Typography>
+                  <Slider
+                    value={localSettings.autoSaveInterval}
+                    onChange={(_, value) => handleSettingChange('autoSaveInterval', value as number)}
+                    min={10}
+                    max={300}
+                    step={10}
+                    marks={[
+                      { value: 10, label: '10с' },
+                      { value: 60, label: '1хв' },
+                      { value: 120, label: '2хв' },
+                      { value: 300, label: '5хв' },
+                    ]}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    Автозбереження зберігає поточну сесію для відновлення при несподіваному закритті
+                  </Typography>
+                </Box>
+              )}
             </Stack>
           )}
 

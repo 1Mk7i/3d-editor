@@ -12,13 +12,19 @@ import useSceneTree from '@/hooks/useSceneTree';
 import { Window } from '@/components/Modals/Window/Window';
 import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
 import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
+import { Instructions } from '@/components/UI/Layaout/Instructions/InstructionsLayout';
 import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
 import { Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem } from '@mui/material';
-import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon } from '@mui/icons-material';
+import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, Category as CategoryIcon, Help as HelpIcon } from '@mui/icons-material';
 import { useSettings } from '@/hooks/useSettings';
 import { FileDialog, FileOperation, FileFormat } from './FileMenu/FileDialog';
+import { WorkshopDialog } from './FileMenu/WorkshopDialog';
+import { ObjectSelectorMenu } from './ObjectSelector/ObjectSelectorMenu';
+import { ObjectSelectorDialog } from './ObjectSelector/ObjectSelectorDialog';
 import { exportToJSON, importFromJSON, createObjectFromData, loadFileAsText, downloadFile, importModelFromFile, exportSceneToFormat } from '@/shared/services/fileService';
+import { saveProject, saveCurrentProject, loadCurrentProject, clearAutoSave } from '@/shared/services/projectService';
+import { ThreeObjectType, createThreeObject } from '@/shared/constants/threeObjects';
 
 const Editor: React.FC = () => {
     const contextMenu = useContextMenu();
@@ -46,6 +52,14 @@ const Editor: React.FC = () => {
         });
     }, [windowManager]);
 
+    const handleInstructionsClick = React.useCallback(() => {
+        windowManager.openWindow('instructions', {
+            isVisible: true,
+            position: { x: 150, y: 150 },
+            size: { width: 800, height: 600 }
+        });
+    }, [windowManager]);
+
     const handleChatClick = React.useCallback(() => {
         windowManager.openWindow('chat', {
             isVisible: true,
@@ -58,6 +72,12 @@ const Editor: React.FC = () => {
     const [fileMenuAnchor, setFileMenuAnchor] = React.useState<null | HTMLElement>(null);
     const [fileDialogOpen, setFileDialogOpen] = React.useState(false);
     const [fileOperation, setFileOperation] = React.useState<FileOperation>('export');
+    const [workshopDialogOpen, setWorkshopDialogOpen] = React.useState(false);
+    const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
+    
+    // Об'єкт меню
+    const [objectMenuAnchor, setObjectMenuAnchor] = React.useState<null | HTMLElement>(null);
+    const [objectSelectorDialogOpen, setObjectSelectorDialogOpen] = React.useState(false);
 
     const handleFileMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
         setFileMenuAnchor(event.currentTarget);
@@ -263,6 +283,31 @@ const Editor: React.FC = () => {
         }
     }, [sceneManager.objects]);
 
+    const handleLoadProject = React.useCallback((objects: any[]) => {
+        // Очищаємо поточну сцену
+        sceneManager.objects.forEach(obj => {
+            sceneManager.removeObject(obj.id);
+        });
+        // Додаємо об'єкти з проекту
+        objects.forEach(obj => {
+            sceneManager.addObject(obj, obj.name || 'Imported Object', obj.type);
+        });
+        setCurrentProjectId(null); // Скидаємо ID проекту при завантаженні нового
+    }, [sceneManager]);
+
+    const handleObjectSelect = React.useCallback((objectType: ThreeObjectType) => {
+        const mesh = createThreeObject(objectType);
+        sceneManager.addObject(mesh, objectType.name, mesh.type);
+    }, [sceneManager]);
+
+    const handleObjectMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
+        setObjectMenuAnchor(event.currentTarget);
+    }, []);
+
+    const handleObjectMenuClose = React.useCallback(() => {
+        setObjectMenuAnchor(null);
+    }, []);
+
     if (!isMounted) {
         return null;
     }
@@ -298,16 +343,64 @@ const Editor: React.FC = () => {
                     >
                         Файл
                     </Button>
+                    <Button
+                        color="inherit"
+                        startIcon={<CategoryIcon />}
+                        onClick={handleObjectMenuOpen}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        Об'єкт
+                    </Button>
+                    <ObjectSelectorMenu
+                        anchorEl={objectMenuAnchor}
+                        open={Boolean(objectMenuAnchor)}
+                        onClose={handleObjectMenuClose}
+                        onSelect={handleObjectSelect}
+                    />
+                    <Button
+                        color="inherit"
+                        startIcon={<HelpIcon />}
+                        onClick={handleInstructionsClick}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        Інструкція
+                    </Button>
                     <Menu
                         anchorEl={fileMenuAnchor}
                         open={Boolean(fileMenuAnchor)}
                         onClose={handleFileMenuClose}
                     >
-                        <MenuItem onClick={() => handleFileMenuClick('import')}>
+                        <MenuItem onClick={() => {
+                            handleFileMenuClick('import');
+                        }}>
                             Імпорт моделі
                         </MenuItem>
-                        <MenuItem onClick={() => handleFileMenuClick('export')}>
+                        <MenuItem onClick={() => {
+                            handleFileMenuClick('export');
+                        }}>
                             Експорт моделі
+                        </MenuItem>
+                        <MenuItem onClick={() => {
+                            const projectName = prompt('Введіть назву проекту:', `Проект ${new Date().toLocaleDateString()}`);
+                            if (projectName) {
+                                try {
+                                    const projectId = saveProject(sceneManager.objects, projectName, currentProjectId || undefined);
+                                    setCurrentProjectId(projectId);
+                                    alert('Проект збережено!');
+                                } catch (error) {
+                                    console.error('Помилка при збереженні:', error);
+                                    alert('Помилка при збереженні проекту');
+                                }
+                            }
+                            handleFileMenuClose();
+                        }}>
+                            Зберегти
+                        </MenuItem>
+                        <MenuItem onClick={() => {
+                            setWorkshopDialogOpen(true);
+                            handleFileMenuClose();
+                        }}>
+                            Майстерня
                         </MenuItem>
                     </Menu>
                     <Box sx={{ flexGrow: 1 }} />
@@ -334,7 +427,7 @@ const Editor: React.FC = () => {
                 <LeftMenu 
                     isEditMode={sceneManager.isEditMode}
                     selectedObjectId={sceneManager.selectedObjectId}
-                    onAddObject={sceneManager.addObject}
+                    onAddObject={() => setObjectSelectorDialogOpen(true)}
                     onToggleEditMode={sceneManager.toggleEditMode}
                     onSetTransformMode={sceneManager.setTransformMode}
                     onRemoveObject={sceneManager.removeObject}
@@ -376,6 +469,18 @@ const Editor: React.FC = () => {
                 onClose={handleFileDialogClose}
                 onConfirm={handleFileConfirm}
                 objectsCount={sceneManager.objects.length}
+            />
+
+            <WorkshopDialog
+                open={workshopDialogOpen}
+                onClose={() => setWorkshopDialogOpen(false)}
+                onLoadProject={handleLoadProject}
+            />
+
+            <ObjectSelectorDialog
+                open={objectSelectorDialogOpen}
+                onClose={() => setObjectSelectorDialogOpen(false)}
+                onSelect={handleObjectSelect}
             />
 
             {windowManager.windows.map(window => {
@@ -426,6 +531,31 @@ const Editor: React.FC = () => {
                             onFocus={() => windowManager.focusWindow(window.id)}
                         >
                             <Chat onClose={() => windowManager.closeWindow('chat')} />
+                        </Window>
+                    );
+                }
+                if (window.id === 'instructions') {
+                    return (
+                        <Window
+                            key={window.id}
+                            id={window.id}
+                            title="Інструкція"
+                            isVisible={window.isVisible}
+                            isMinimized={window.isMinimized}
+                            isMaximized={window.isMaximized}
+                            initialPosition={window.position}
+                            initialSize={window.size}
+                            minSize={{ width: 600, height: 400 }}
+                            resizable={true}
+                            draggable={true}
+                            zIndex={window.zIndex}
+                            onClose={() => windowManager.closeWindow(window.id)}
+                            onMinimize={() => windowManager.minimizeWindow(window.id)}
+                            onMaximize={() => windowManager.maximizeWindow(window.id)}
+                            onRestore={() => windowManager.restoreWindow(window.id)}
+                            onFocus={() => windowManager.focusWindow(window.id)}
+                        >
+                            <Instructions onClose={() => windowManager.closeWindow('instructions')} />
                         </Window>
                     );
                 }

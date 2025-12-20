@@ -3,15 +3,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 export interface SettingsData {
-  // UI налаштування
+  // UI
   theme: 'light' | 'dark' | 'auto';
   language: string;
   fontSize: number;
   animations: boolean;
   notifications: boolean;
   autoSave: boolean;
+  autoSaveInterval: number; // інтервал в секундах
   
-  // 3D Scene налаштування
+  // 3D сцена
   sceneBackgroundColor: string;
   gridVisible: boolean;
   gridSize: number;
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: SettingsData = {
   animations: true,
   notifications: true,
   autoSave: true,
+  autoSaveInterval: 30, // 30 секунд
   sceneBackgroundColor: '#121212',
   gridVisible: true,
   gridSize: 20,
