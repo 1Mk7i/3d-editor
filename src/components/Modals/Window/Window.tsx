@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import './Window.css';
 import { WindowProps } from './types';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 export const Window: React.FC<WindowProps> = ({
   id,
@@ -41,6 +42,7 @@ export const Window: React.FC<WindowProps> = ({
   const [savedPosition, setSavedPosition] = useState(initialPosition);
   const [isClosing, setIsClosing] = useState(false);
   const [isButtonClicked, setIsButtonClicked] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isMaximized && !wasMaximized) {
@@ -63,6 +65,20 @@ export const Window: React.FC<WindowProps> = ({
       setWasMaximized(false);
     }
   }, [isMaximized, size, position, savedSize, savedPosition, maxSize]);
+
+  // На мобільних пристроях автоматично максимізуємо вікно при відкритті
+  useEffect(() => {
+    if (isMobile && isVisible && !isMaximized && !wasMaximized) {
+      setSavedSize(size);
+      setSavedPosition(position);
+      setPosition({ x: 0, y: 0 });
+      setSize({ width: window.innerWidth, height: window.innerHeight });
+      setWasMaximized(true);
+      if (onMaximize) {
+        onMaximize();
+      }
+    }
+  }, [isMobile, isVisible, isMaximized, wasMaximized, size, position, onMaximize]);
 
   // Встановлюємо maxSize після монтування компонента
   const [maxSizeState, setMaxSizeState] = useState({ width: 1200, height: 800 });
@@ -176,7 +192,7 @@ export const Window: React.FC<WindowProps> = ({
   }, [isDragging, isResizing, dragOffset, resizeStart, resizeDirection, position, size, draggable, resizable, isMaximized, minSize, actualMaxSize]);
 
   const handleTitleBarMouseDown = (e: React.MouseEvent) => {
-    if (!draggable || isMaximized) return;
+    if (!draggable || isMaximized || isMobile) return;
     
     e.preventDefault();
     const rect = windowRef.current?.getBoundingClientRect();
@@ -218,7 +234,7 @@ export const Window: React.FC<WindowProps> = ({
   }, [isButtonClicked]);
 
   const handleResizeMouseDown = (e: React.MouseEvent, direction: string) => {
-    if (!resizable || isMaximized) return;
+    if (!resizable || isMaximized || isMobile) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -345,7 +361,7 @@ export const Window: React.FC<WindowProps> = ({
       </div>
 
       {/* Resize Handles */}
-      {resizable && !isMaximized && (
+      {resizable && !isMaximized && !isMobile && (
         <>
           {/* Corners */}
           <div

@@ -9,6 +9,7 @@ import {
   Box,
 } from '@mui/material';
 import { ThreeObjectType, THREE_OBJECT_TYPES } from '@/shared/constants/threeObjects';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface ObjectSelectorMenuProps {
   anchorEl: HTMLElement | null;
@@ -23,6 +24,7 @@ export const ObjectSelectorMenu: React.FC<ObjectSelectorMenuProps> = ({
   onClose,
   onSelect,
 }) => {
+  const isMobile = useIsMobile();
   const handleSelect = (objectType: ThreeObjectType) => {
     onSelect(objectType);
     onClose();
@@ -35,8 +37,11 @@ export const ObjectSelectorMenu: React.FC<ObjectSelectorMenuProps> = ({
       onClose={onClose}
       PaperProps={{
         sx: {
-          maxHeight: 400,
-          width: 250,
+          maxHeight: isMobile 
+            ? 'calc(100vh - 100px)' 
+            : 400,
+          width: isMobile ? 'calc(100vw - 40px)' : 250,
+          maxWidth: isMobile ? 'calc(100vw - 40px)' : 250,
         },
       }}
     >

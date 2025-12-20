@@ -9,6 +9,7 @@ import {
   Box,
   Divider,
 } from '@mui/material';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import * as THREE from 'three';
 
 interface RightMenuProps {
@@ -34,6 +35,7 @@ export const RightMenu: React.FC<RightMenuProps> = ({
     onSelectObject,
     onUpdateObject,
 }) => {
+    const isMobile = useIsMobile();
     const selectedObject = selectedObjectId
         ? objects.find(obj => obj.id === selectedObjectId)?.mesh || null
         : null;
@@ -54,17 +56,18 @@ export const RightMenu: React.FC<RightMenuProps> = ({
         <Paper
             elevation={0}
             sx={{
-                width: 300,
-                minWidth: 200,
-                maxWidth: 400,
+                width: isMobile ? '100%' : 300,
+                minWidth: isMobile ? 250 : 200,
+                maxWidth: isMobile ? '100%' : 400,
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 borderRadius: 0,
-                borderLeft: 1,
+                borderLeft: isMobile ? 0 : 1,
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
                 flexShrink: 0,
+                transition: 'transform 0.3s ease, opacity 0.3s ease',
             }}
         >
             {/* Верхня частина - Дерево сцени */}

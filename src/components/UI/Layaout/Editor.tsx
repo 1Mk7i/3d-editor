@@ -15,9 +15,11 @@ import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
 import { Instructions } from '@/components/UI/Layaout/Instructions/InstructionsLayout';
 import { LeftMenu } from './LeftMenu';
 import { RightMenu } from './RightMenu';
-import { Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem } from '@mui/material';
-import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, Category as CategoryIcon, Help as HelpIcon } from '@mui/icons-material';
+import { Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip } from '@mui/material';
+import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, Category as CategoryIcon, Help as HelpIcon, Fullscreen as FullscreenIcon, FullscreenExit as FullscreenExitIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon } from '@mui/icons-material';
 import { useSettings } from '@/hooks/useSettings';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { FileDialog, FileOperation, FileFormat } from './FileMenu/FileDialog';
 import { WorkshopDialog } from './FileMenu/WorkshopDialog';
 import { ObjectSelectorMenu } from './ObjectSelector/ObjectSelectorMenu';
@@ -33,11 +35,21 @@ const Editor: React.FC = () => {
     const sceneManager = useSceneManager();
     const sceneTree = useSceneTree();
     const { settings } = useSettings();
+    const isMobile = useIsMobile();
+    const { isFullscreen, isSupported, toggleFullscreen } = useFullscreen();
     const [isMounted, setIsMounted] = React.useState(false);
+    const [isRightMenuVisible, setIsRightMenuVisible] = React.useState(true);
 
     React.useEffect(() => {
         setIsMounted(true);
-    }, []);
+        
+        // На мобільних пристроях автоматично встановлюємо повноекранний режим через CSS
+        if (isMobile) {
+            // Додаємо клас для повноекранного режиму
+            document.documentElement.classList.add('mobile-fullscreen');
+        }
+    }, [isMobile]);
+
 
     React.useEffect(() => {
         const tree = sceneManager.getTreeScene();
@@ -46,28 +58,58 @@ const Editor: React.FC = () => {
     }, [sceneManager.objects]);
 
     const handleSettingsClick = React.useCallback(() => {
-        windowManager.openWindow('settings', {
-            isVisible: true,
-            position: { x: 100, y: 100 },
-            size: { width: 600, height: 400 }
-        });
-    }, [windowManager]);
+        if (isMobile) {
+            // На мобільних відкриваємо у повноекранному режимі
+            windowManager.openWindow('settings', {
+                isVisible: true,
+                position: { x: 0, y: 0 },
+                size: { width: window.innerWidth, height: window.innerHeight }
+            });
+            windowManager.maximizeWindow('settings');
+        } else {
+            windowManager.openWindow('settings', {
+                isVisible: true,
+                position: { x: 100, y: 100 },
+                size: { width: 600, height: 400 }
+            });
+        }
+    }, [windowManager, isMobile]);
 
     const handleInstructionsClick = React.useCallback(() => {
-        windowManager.openWindow('instructions', {
-            isVisible: true,
-            position: { x: 150, y: 150 },
-            size: { width: 800, height: 600 }
-        });
-    }, [windowManager]);
+        if (isMobile) {
+            // На мобільних відкриваємо у повноекранному режимі
+            windowManager.openWindow('instructions', {
+                isVisible: true,
+                position: { x: 0, y: 0 },
+                size: { width: window.innerWidth, height: window.innerHeight }
+            });
+            windowManager.maximizeWindow('instructions');
+        } else {
+            windowManager.openWindow('instructions', {
+                isVisible: true,
+                position: { x: 150, y: 150 },
+                size: { width: 800, height: 600 }
+            });
+        }
+    }, [windowManager, isMobile]);
 
     const handleChatClick = React.useCallback(() => {
-        windowManager.openWindow('chat', {
-            isVisible: true,
-            position: { x: 150, y: 150 },
-            size: { width: 400, height: 600 }
-        });
-    }, [windowManager]);
+        if (isMobile) {
+            // На мобільних відкриваємо у повноекранному режимі
+            windowManager.openWindow('chat', {
+                isVisible: true,
+                position: { x: 0, y: 0 },
+                size: { width: window.innerWidth, height: window.innerHeight }
+            });
+            windowManager.maximizeWindow('chat');
+        } else {
+            windowManager.openWindow('chat', {
+                isVisible: true,
+                position: { x: 150, y: 150 },
+                size: { width: 400, height: 600 }
+            });
+        }
+    }, [windowManager, isMobile]);
 
     // Файлове меню
     const [fileMenuAnchor, setFileMenuAnchor] = React.useState<null | HTMLElement>(null);
@@ -402,7 +444,14 @@ const Editor: React.FC = () => {
                 flexDirection: 'column',
                 bgcolor: 'background.default',
                 overflow: 'hidden',
+                ...(isMobile && {
+                    width: '100vw',
+                    height: '100vh',
+                    maxWidth: '100vw',
+                    maxHeight: '100vh',
+                }),
             }}
+            className={isMobile ? 'mobile-fullscreen-container' : ''}
             onContextMenu={contextMenu.showContextMenu}
         >
             <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
@@ -444,6 +493,15 @@ const Editor: React.FC = () => {
                         anchorEl={fileMenuAnchor}
                         open={Boolean(fileMenuAnchor)}
                         onClose={handleFileMenuClose}
+                        PaperProps={{
+                            sx: {
+                                maxHeight: isMobile 
+                                    ? 'calc(100vh - 100px)' 
+                                    : 'calc(100vh - 200px)',
+                                width: 'auto',
+                                minWidth: 200,
+                            },
+                        }}
                     >
                         <MenuItem onClick={() => {
                             handleFileMenuClick('import');
@@ -479,6 +537,16 @@ const Editor: React.FC = () => {
                         </MenuItem>
                     </Menu>
                     <Box sx={{ flexGrow: 1 }} />
+                    {isMobile && isSupported && (
+                        <Tooltip title={isFullscreen ? 'Вийти з повноекранного режиму' : 'Увійти в повноекранний режим'}>
+                            <IconButton
+                                onClick={toggleFullscreen}
+                                sx={{ color: 'text.primary', mr: 1 }}
+                            >
+                                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Button
                         color="inherit"
                         startIcon={<SettingsIcon />}
@@ -521,14 +589,53 @@ const Editor: React.FC = () => {
                     />
                 </Box>
 
-                <RightMenu 
-                    treeData={sceneTree.treeData}
-                    onUpdateTree={sceneTree.updateTree}
-                    selectedObjectId={sceneManager.selectedObjectId}
-                    objects={sceneManager.objects}
-                    onSelectObject={sceneManager.selectObject}
-                    onUpdateObject={handleUpdateObject}
-                />
+                {/* Кнопка для перемикання правої панелі */}
+                {isMobile && (
+                    <IconButton
+                        onClick={() => setIsRightMenuVisible(!isRightMenuVisible)}
+                        sx={{
+                            position: 'absolute',
+                            right: isRightMenuVisible ? '40%' : 0,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 1001,
+                            bgcolor: 'background.paper',
+                            border: 1,
+                            borderColor: 'divider',
+                            borderRadius: isRightMenuVisible ? '4px 0 0 4px' : '0 4px 4px 0',
+                            width: 40,
+                            height: 80,
+                            boxShadow: 2,
+                            '&:hover': {
+                                bgcolor: 'action.hover',
+                            },
+                            transition: 'right 0.3s ease, border-radius 0.3s ease',
+                        }}
+                        title={isRightMenuVisible ? 'Приховати праву панель' : 'Показати праву панель'}
+                    >
+                        {isRightMenuVisible ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                    </IconButton>
+                )}
+
+                <Box
+                    sx={{
+                        width: isRightMenuVisible ? (isMobile ? '40%' : 300) : 0,
+                        overflow: 'hidden',
+                        transition: 'width 0.3s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    {isRightMenuVisible && (
+                        <RightMenu 
+                            treeData={sceneTree.treeData}
+                            onUpdateTree={sceneTree.updateTree}
+                            selectedObjectId={sceneManager.selectedObjectId}
+                            objects={sceneManager.objects}
+                            onSelectObject={sceneManager.selectObject}
+                            onUpdateObject={handleUpdateObject}
+                        />
+                    )}
+                </Box>
             </Box>
 
             <ContextMenu
