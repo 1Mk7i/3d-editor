@@ -38,12 +38,15 @@ export const ObjectSelectorDialog: React.FC<ObjectSelectorDialogProps> = ({
           {THREE_OBJECT_TYPES.map((objectType) => (
             <Grid item xs={6} sm={4} md={3} key={objectType.id}>
               <Paper
+                elevation={1}
                 sx={{
                   p: 2,
                   cursor: 'pointer',
                   textAlign: 'center',
+                  transition: 'transform 0.2s, background-color 0.2s',
                   '&:hover': {
                     bgcolor: 'action.hover',
+                    transform: 'translateY(-4px)',
                   },
                 }}
                 onClick={() => handleSelect(objectType)}
@@ -53,31 +56,61 @@ export const ObjectSelectorDialog: React.FC<ObjectSelectorDialogProps> = ({
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 1,
+                    gap: 1.5,
                   }}
                 >
-                  {objectType.icon && (
-                    <img
+                  {objectType.icon ? (
+                    <Box
+                      component="img"
                       src={objectType.icon}
                       alt={objectType.name}
-                      style={{ width: 48, height: 48 }}
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        objectFit: 'contain',
+                        // Адаптація під темну тему:
+                        // Якщо тема темна, робимо іконку білою
+                        filter: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? 'brightness(0) invert(1)'
+                            : 'none',
+                      }}
                       onError={(e) => {
-                        // Якщо іконка не завантажилась, показуємо placeholder
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48/CCCCCC/666666?text=?';
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/48/CCCCCC/666666?text=?';
                       }}
                     />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: 'action.disabled',
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        Н/Д
+                      </Typography>
+                    </Box>
                   )}
-                  <Typography variant="body2">{objectType.name}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {objectType.name}
+                  </Typography>
                 </Box>
               </Paper>
             </Grid>
           ))}
         </Grid>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Скасувати</Button>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} color="inherit">
+          Скасувати
+        </Button>
       </DialogActions>
     </Dialog>
   );
 };
-

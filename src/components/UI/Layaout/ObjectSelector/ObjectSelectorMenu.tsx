@@ -52,23 +52,22 @@ export const ObjectSelectorMenu: React.FC<ObjectSelectorMenuProps> = ({
         >
           <ListItemIcon>
             {objectType.icon ? (
-              <img
+              <Box
+                component="img"
                 src={objectType.icon}
                 alt={objectType.name}
-                style={{ width: 24, height: 24 }}
+                sx={{
+                  width: 24,
+                  height: 24,
+                  filter: (theme) => 
+                    theme.palette.mode === 'dark' ? 'invert(1) brightness(2)' : 'none',
+                }}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://via.placeholder.com/24/CCCCCC/666666?text=?';
                 }}
               />
             ) : (
-              <Box
-                sx={{
-                  width: 24,
-                  height: 24,
-                  bgcolor: 'action.disabled',
-                  borderRadius: 1,
-                }}
-              />
+              <Box sx={{ width: 24, height: 24, bgcolor: 'action.disabled', borderRadius: 1 }} />
             )}
           </ListItemIcon>
           <ListItemText primary={objectType.name} />
