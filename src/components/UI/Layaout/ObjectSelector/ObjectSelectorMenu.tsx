@@ -59,8 +59,11 @@ export const ObjectSelectorMenu: React.FC<ObjectSelectorMenuProps> = ({
                 sx={{
                   width: 24,
                   height: 24,
-                  filter: (theme) => 
-                    theme.palette.mode === 'dark' ? 'invert(1) brightness(2)' : 'none',
+                  filter: (theme) => {
+                    const baseFilter = theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : '';
+                    // Додаємо невелику тінь того ж кольору, що й лінія, щоб вона здавалася товстішою
+                    return `${baseFilter} drop-shadow(0.5px 0px 0px white) drop-shadow(-0.5px 0px 0px white)`;
+                  },
                 }}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://via.placeholder.com/24/CCCCCC/666666?text=?';

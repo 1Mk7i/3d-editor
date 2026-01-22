@@ -70,10 +70,11 @@ export const ObjectSelectorDialog: React.FC<ObjectSelectorDialogProps> = ({
                         objectFit: 'contain',
                         // Адаптація під темну тему:
                         // Якщо тема темна, робимо іконку білою
-                        filter: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'brightness(0) invert(1)'
-                            : 'none',
+                        filter: (theme) => {
+                          const baseFilter = theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : '';
+                          // Додаємо невелику тінь того ж кольору, що й лінія, щоб вона здавалася товстішою
+                          return `${baseFilter} drop-shadow(0.5px 0px 0px white) drop-shadow(-0.5px 0px 0px white)`;
+                        },
                       }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
