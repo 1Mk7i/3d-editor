@@ -16,9 +16,12 @@ export type { GeminiModelInfo, ChatMessage };
 /**
  * Отримує список доступних моделей Gemini
  */
-export async function fetchGeminiModels(): Promise<GeminiModelInfo[]> {
+export async function fetchGeminiModels(userApiKey?: string): Promise<GeminiModelInfo[]> {
   try {
-    const response = await fetch('/api/gemini-models');
+    console.log('fetchGeminiModels - userApiKey присутній:', !!userApiKey);
+    const response = await fetch('/api/gemini-models', {
+      headers: userApiKey ? { 'x-api-key': userApiKey } : {}
+    });
     
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
@@ -61,13 +64,15 @@ export async function generateContent(
   message: string,
   model: GeminiModel = DEFAULT_GEMINI_MODEL,
   history: Array<{ role: 'user' | 'bot'; text: string }> = [],
-  systemInstruction?: string
+  systemInstruction?: string,
+  userApiKey?: string
 ): Promise<GenerateContentResponse> {
   try {
     const response = await fetch('/api/generate-content', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(userApiKey && { 'x-api-key': userApiKey })
       },
       body: JSON.stringify({
         model,
@@ -136,9 +141,11 @@ export async function generateContent(
 /**
  * Перевіряє доступність API
  */
-export async function checkApiConnection(): Promise<boolean> {
+export async function checkApiConnection(userApiKey?: string): Promise<boolean> {
   try {
-    const response = await fetch('/api/gemini-models');
+    const response = await fetch('/api/gemini-models', {
+      headers: userApiKey ? { 'x-api-key': userApiKey } : {}
+    });
     return response.ok;
   } catch (error) {
     return false;

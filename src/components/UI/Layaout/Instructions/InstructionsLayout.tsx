@@ -68,7 +68,7 @@ export const Instructions: React.FC<InstructionsProps> = ({ onClose }) => {
             label="Керування мишею"
             sx={{ textTransform: 'none' }}
           />
-          <Tab
+          {/* <Tab
             icon={<KeyboardIcon />}
             iconPosition="start"
             label="Гарячі клавіші"
@@ -91,13 +91,13 @@ export const Instructions: React.FC<InstructionsProps> = ({ onClose }) => {
             iconPosition="start"
             label="Налаштування"
             sx={{ textTransform: 'none' }}
-          />
-          <Tab
+          /> */}
+          {/* <Tab
             icon={<HelpIcon />}
             iconPosition="start"
             label="AI Агент"
             sx={{ textTransform: 'none' }}
-          />
+          /> */}
         </Tabs>
       </Paper>
 
@@ -211,7 +211,7 @@ export const Instructions: React.FC<InstructionsProps> = ({ onClose }) => {
                 </ListItem>
                 <ListItem>
                   <ListItemText 
-                    primary="Права кнопка миші + перетягування"
+                    primary="Ліва кнопка миші + Shift + перетягування"
                     secondary="Переміщення камери (pan)"
                   />
                 </ListItem>
@@ -219,12 +219,6 @@ export const Instructions: React.FC<InstructionsProps> = ({ onClose }) => {
                   <ListItemText 
                     primary="Колесо миші"
                     secondary="Масштабування (приближення/віддалення)"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Подвійний клік на об'єкт"
-                    secondary="Вибрати об'єкт та зосередити на ньому камеру"
                   />
                 </ListItem>
               </List>

@@ -23,12 +23,12 @@ export interface UseChatReturn {
   chatState: ChatState;
   availableModels: GeminiModelInfo[];
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSendMessage: (onAgentResponse?: (text: string) => void) => Promise<void>;
+  handleSendMessage: (onAgentResponse?: (text: string) => void, userApiKey?: string) => Promise<void>;
   handleModelChange: (model: GeminiModel) => void;
-  retryConnection: () => Promise<void>;
+  retryConnection: (userApiKey?: string) => Promise<void>;
 }
 
-export const useChat = (systemInstruction?: string): UseChatReturn => {
+export const useChat = (systemInstruction?: string, userApiKey?: string): UseChatReturn => {
   const [chatState, setChatState] = useState<ChatState>({
     messages: [],
     inputText: '',
@@ -54,7 +54,7 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
       
       try {
         // Перевіряємо підключення
-        const isConnected = await checkApiConnection();
+        const isConnected = await checkApiConnection(userApiKey);
         
         if (!isConnected) {
           setChatState(prev => ({ 
@@ -66,7 +66,7 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
         }
 
         // Завантажуємо список моделей
-        const models = await fetchGeminiModels();
+        const models = await fetchGeminiModels(userApiKey);
         setAvailableModels(models);
         
         setChatState(prev => ({ 
@@ -84,14 +84,17 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
       }
     };
 
-    initializeChat();
-  }, []);
+    // Виконуємо тільки якщо є ключ (серверний чи користувацький)
+    if (userApiKey || process.env.NODE_ENV === 'development') {
+      initializeChat();
+    }
+  }, [userApiKey]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setChatState(prev => ({ ...prev, inputText: e.target.value }));
   }, []);
 
-  const handleSendMessage = useCallback(async (onAgentResponse?: (text: string) => void) => {
+  const handleSendMessage = useCallback(async (onAgentResponse?: (text: string) => void, userApiKey?: string) => {
     if (chatState.inputText.trim() === '' || chatState.isLoading) return;
 
     const userMessage: ChatMessage = {
@@ -130,7 +133,8 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
         userMessage.text,
         chatState.selectedModel,
         history,
-        systemInstructionRef.current
+        systemInstructionRef.current,
+        userApiKey
       );
 
       const botMessage: ChatMessage = {
@@ -201,7 +205,7 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
     setChatState(prev => ({ ...prev, selectedModel: model }));
   }, []);
 
-  const retryConnection = useCallback(async () => {
+  const retryConnection = useCallback(async (userApiKey?: string) => {
     setChatState(prev => ({ ...prev, connectionStatus: CONNECTION_STATUS.CONNECTING }));
     
     try {
@@ -216,7 +220,7 @@ export const useChat = (systemInstruction?: string): UseChatReturn => {
         return;
       }
 
-      const models = await fetchGeminiModels();
+      const models = await fetchGeminiModels(userApiKey);
       setAvailableModels(models);
       
       setChatState(prev => ({ 

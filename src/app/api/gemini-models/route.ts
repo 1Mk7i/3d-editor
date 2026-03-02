@@ -1,23 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
 /**
  * API endpoint для отримання списку доступних моделей Gemini
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const userApiKey = request.headers.get('x-api-key');
+    const serverApiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey) {
+    console.log('gemini-models - userApiKey присутній:', !!userApiKey);
+    console.log('gemini-models - serverApiKey присутній:', !!serverApiKey);
+    
+    const FINAL_API_KEY = userApiKey || serverApiKey;
+
+    if (!FINAL_API_KEY) {
+      console.error('gemini-models - API ключ відсутній!');
       return NextResponse.json(
-        { error: 'API ключ не налаштовано' },
-        { status: 500 }
+        { 
+          error: 'API ключ не налаштовано. Введіть ключ у полі "Gemini API Key" або встановіть GEMINI_API_KEY в .env.local' 
+        },
+        { status: 401 }
       );
     }
 
     // Ініціалізуємо GoogleGenAI з API ключем
     const ai = new GoogleGenAI({
-      apiKey: apiKey,
+      apiKey: FINAL_API_KEY,
     });
 
     // Отримуємо список моделей через новий SDK

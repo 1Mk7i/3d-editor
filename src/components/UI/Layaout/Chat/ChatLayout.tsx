@@ -43,7 +43,29 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<number | string | null>(null);
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
+  const [userApiKey, setUserApiKey] = useState<string>('');
   const theme = useTheme();
+
+  // load key from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('geminiApiKey');
+      if (stored) {
+        setUserApiKey(stored);
+      }
+    } catch {}
+  }, []);
+
+  // persist key whenever it changes
+  useEffect(() => {
+    try {
+      if (userApiKey) {
+        localStorage.setItem('geminiApiKey', userApiKey);
+      } else {
+        localStorage.removeItem('geminiApiKey');
+      }
+    } catch {}
+  }, [userApiKey]);
 
   // Формуємо інформацію про сцену для агента
   const getSceneInfo = useCallback((): string => {
@@ -78,7 +100,7 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     handleSendMessage,
     handleModelChange,
     retryConnection,
-  } = useChat(agentPrompt);
+  } = useChat(agentPrompt, userApiKey);
 
   // Автоматичне прокручування до останнього повідомлення
   useEffect(() => {
@@ -86,6 +108,13 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatState.messages, chatState.isLoading]);
+
+  // Спроба підключення при зміні ключа
+  useEffect(() => {
+    if (userApiKey) {
+      retryConnection(userApiKey);
+    }
+  }, [userApiKey, retryConnection]);
 
   const handleAgentResponse = useCallback((responseText: string) => {
     if (chatMode === 'agent') {
@@ -127,8 +156,8 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   }, [chatMode, onAgentCommand]);
 
   const handleSend = useCallback(async () => {
-    await handleSendMessage(handleAgentResponse);
-  }, [handleSendMessage, handleAgentResponse]);
+    await handleSendMessage(handleAgentResponse, userApiKey);
+  }, [handleSendMessage, handleAgentResponse, userApiKey]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -265,7 +294,7 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
             {chatState.connectionStatus === CONNECTION_STATUS.ERROR && (
               <IconButton
                 size="small"
-                onClick={retryConnection}
+                onClick={() => retryConnection(userApiKey || undefined)}
                 sx={{ ml: 1 }}
               >
                 <Typography variant="caption">Повторити</Typography>
@@ -306,6 +335,29 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
             ))}
           </Select>
         </FormControl>
+      </Paper>
+
+      {/* API Key Input */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.5,
+          borderRadius: 0,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <TextField
+          label="Gemini API Key"
+          type="password"
+          size="small"
+          fullWidth
+          value={userApiKey}
+          onChange={(e) => setUserApiKey(e.target.value)}
+          placeholder="AIzaSy..."
+          sx={{ mb: 2 }}
+        />
       </Paper>
 
       {/* Messages */}
@@ -448,7 +500,14 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
       {/* Error Banner */}
       {chatState.error && chatState.connectionStatus === CONNECTION_STATUS.ERROR && (
         <Alert severity="error" sx={{ borderRadius: 0 }}>
-          {chatState.error}
+          <Box>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              {chatState.error}
+            </Typography>
+            <Typography variant="caption" color="inherit">
+              💡 Порада: Введіть ваш Gemini API ключ вище і натисніть "Повторити"
+            </Typography>
+          </Box>
         </Alert>
       )}
 

@@ -6,12 +6,15 @@ import { GoogleGenAI } from '@google/genai';
  */
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const userApiKey = request.headers.get('x-api-key');
+    const serverApiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey) {
+    const FINAL_API_KEY = userApiKey || serverApiKey;
+
+    if (!FINAL_API_KEY) {
       return NextResponse.json(
         { error: 'API ключ не налаштовано' },
-        { status: 500 }
+        { status: 401 }
       );
     }
 
@@ -25,9 +28,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ініціалізуємо GoogleGenAI з API ключем
+    // Ініціалізуємо GoogleGenerativeAI з API ключем
     const ai = new GoogleGenAI({
-      apiKey: apiKey,
+      apiKey: FINAL_API_KEY,
     });
 
     // Формуємо контент для генерації
