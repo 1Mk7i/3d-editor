@@ -50,7 +50,7 @@ const TreeNode: React.FC<{
     }
   };
 
-  const getIcon = (shape: string | null, type: string) => {
+  const getIcon = (shape: string | null | undefined, type: string | undefined) => {
     const shapeLower = (shape || type || '').toLowerCase();
     if (shapeLower.includes('box')) return <BoxGeometryIcon fontSize="small" />;
     if (shapeLower.includes('sphere')) return <CircleIcon fontSize="small" />;

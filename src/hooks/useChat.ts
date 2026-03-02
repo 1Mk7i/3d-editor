@@ -122,7 +122,7 @@ export const useChat = (systemInstruction?: string, userApiKey?: string): UseCha
 
     try {
       // Формуємо історію повідомлень для контексту
-      const history = chatState.messages
+      const history: Array<{ role: 'user' | 'bot'; text: string }> = chatState.messages
         .filter(msg => !msg.error) // Виключаємо повідомлення з помилками
         .map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'bot',

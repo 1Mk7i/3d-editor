@@ -39,7 +39,12 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
 
   // Застосовуємо налаштування згладжування
   useEffect(() => {
-    gl.antialias = settings.antialiasing;
+    // antialias is set during WebGLRenderer initialization and cannot be changed after
+    // This would need to be set when creating the renderer
+    if (!settings.antialiasing && gl) {
+      // Disable post-processing blur by lowering sampling if needed
+      gl.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+    }
   }, [settings.antialiasing, gl]);
 
   useEffect(() => {

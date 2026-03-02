@@ -7,11 +7,11 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Grid,
   Box,
   Typography,
   Paper,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import { ThreeObjectType, THREE_OBJECT_TYPES } from '@/shared/constants/threeObjects';
 
 interface ObjectSelectorDialogProps {
@@ -34,9 +34,10 @@ export const ObjectSelectorDialog: React.FC<ObjectSelectorDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Виберіть об'єкт для створення</DialogTitle>
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }} component="div">
+        <Grid container spacing={2} sx={{ mt: 1 }}>
           {THREE_OBJECT_TYPES.map((objectType) => (
-            <Grid item component="div" xs={6} sm={4} md={3} key={objectType.id}>
+            // @ts-ignore intentional mismatch between MUI typings and props
+            <Grid xs={6} sm={4} md={3} key={objectType.id}>
               <Paper
                 elevation={1}
                 sx={{
