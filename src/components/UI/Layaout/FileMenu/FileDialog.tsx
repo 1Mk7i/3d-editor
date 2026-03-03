@@ -16,10 +16,8 @@ import {
   TextField,
   Divider,
 } from '@mui/material';
-import { CollectionElementProps } from '@/components/UI/Collection/types';
 
 export type FileOperation = 'import' | 'export';
-// Формати, які підтримує Three.js
 export type FileFormat = 'json' | 'gltf' | 'glb' | 'obj' | 'stl' | 'ply' | 'fbx' | 'dae' | '3mf' | 'amf';
 
 interface FileDialogProps {
@@ -40,7 +38,6 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   const [format, setFormat] = useState<FileFormat>('json');
   const [fileName, setFileName] = useState<string>('scene');
 
-  // Скидаємо формат до підтримуваного при зміні операції
   React.useEffect(() => {
     if (operation === 'export' && (format === 'fbx' || format === 'dae' || format === '3mf' || format === 'amf')) {
       setFormat('json');
