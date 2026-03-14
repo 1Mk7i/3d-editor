@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   MenuItem,
   Switch,
   FormControlLabel,
-  Paper,
   Button,
   Dialog,
   DialogTitle,
@@ -37,6 +36,15 @@ interface ObjectPropertiesProps {
   }) => void;
 }
 
+// Тип для проміжних рядкових значень полів вводу
+type Vec3String = { x: string; y: string; z: string };
+
+const vec3ToStr = (v: { x: number; y: number; z: number }, decimals = 2): Vec3String => ({
+  x: v.x.toFixed(decimals),
+  y: v.y.toFixed(decimals),
+  z: v.z.toFixed(decimals),
+});
+
 export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
   selectedObject,
   onUpdateObject,
@@ -44,73 +52,74 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
   const [name, setName] = useState('');
   const [tempName, setTempName] = useState('');
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [scale, setScale] = useState({ x: 1, y: 1, z: 1 });
-  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
+
+  // Рядкові стейти для полів — щоб не псувати курсор і дозволяти вводити "-"
+  const [posStr, setPosStr] = useState<Vec3String>({ x: '0', y: '0', z: '0' });
+  const [scaleStr, setScaleStr] = useState<Vec3String>({ x: '1', y: '1', z: '1' });
+  const [rotStr, setRotStr] = useState<Vec3String>({ x: '0', y: '0', z: '0' });
+
   const [color, setColor] = useState('#ff0000');
   const [materialType, setMaterialType] = useState<'standard' | 'wireframe' | 'points'>('standard');
   const [wireframe, setWireframe] = useState(false);
 
-  useEffect(() => {
-    if (selectedObject) {
-      setName(selectedObject.name || 'Unnamed Object');
-      setPosition({
-        x: selectedObject.position.x,
-        y: selectedObject.position.y,
-        z: selectedObject.position.z,
-      });
-      setScale({
-        x: selectedObject.scale.x,
-        y: selectedObject.scale.y,
-        z: selectedObject.scale.z,
-      });
-      setRotation({
-        x: (selectedObject.rotation.x * 180) / Math.PI,
-        y: (selectedObject.rotation.y * 180) / Math.PI,
-        z: (selectedObject.rotation.z * 180) / Math.PI,
-      });
+  // Лічильник активних фокусів на числових полях — interval зупиняється поки юзер вводить
+  const focusCountRef = useRef(0);
 
-      const mesh = selectedObject as THREE.Mesh;
-      if (mesh.material) {
-        if (mesh.material instanceof THREE.PointsMaterial) {
-          setMaterialType('points');
-          if (mesh.material.color) {
-            setColor('#' + mesh.material.color.getHexString());
-          }
-        } else {
-          const material = mesh.material as THREE.MeshStandardMaterial;
-          if (material.color) {
-            setColor('#' + material.color.getHexString());
-          }
-          if (material.wireframe !== undefined) {
-            setWireframe(material.wireframe);
-            setMaterialType(material.wireframe ? 'wireframe' : 'standard');
-          }
+  // Читаємо стан з об'єкта при зміні selectedObject
+  useEffect(() => {
+    if (!selectedObject) return;
+
+    setName(selectedObject.name || 'Unnamed Object');
+    setPosStr(vec3ToStr(selectedObject.position));
+    setScaleStr(vec3ToStr(selectedObject.scale, 3));
+    setRotStr(vec3ToStr({
+      x: (selectedObject.rotation.x * 180) / Math.PI,
+      y: (selectedObject.rotation.y * 180) / Math.PI,
+      z: (selectedObject.rotation.z * 180) / Math.PI,
+    }));
+
+    const mesh = selectedObject as THREE.Mesh;
+    if (mesh.material) {
+      if (mesh.material instanceof THREE.PointsMaterial) {
+        setMaterialType('points');
+        if (mesh.material.color) setColor('#' + mesh.material.color.getHexString());
+      } else {
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        if (material.color) setColor('#' + material.color.getHexString());
+        if (material.wireframe !== undefined) {
+          setWireframe(material.wireframe);
+          setMaterialType(material.wireframe ? 'wireframe' : 'standard');
         }
       }
     }
   }, [selectedObject]);
 
-  // Синхронізація зміни позиції, масштабу та обертання в реальному часі
+  // Синхронізація з Three.js у реальному часі (тільки коли немає активного вводу)
   useEffect(() => {
     if (!selectedObject) return;
 
     const updateFromObject = () => {
-      setPosition({
-        x: selectedObject.position.x,
-        y: selectedObject.position.y,
-        z: selectedObject.position.z,
-      });
-      setScale({
-        x: selectedObject.scale.x,
-        y: selectedObject.scale.y,
-        z: selectedObject.scale.z,
-      });
-      setRotation({
+      // Не перезаписуємо поля поки юзер щось вводить
+      if (focusCountRef.current > 0) return;
+
+      const newPosStr = vec3ToStr(selectedObject.position);
+      const newScaleStr = vec3ToStr(selectedObject.scale, 3);
+      const newRotStr = vec3ToStr({
         x: (selectedObject.rotation.x * 180) / Math.PI,
         y: (selectedObject.rotation.y * 180) / Math.PI,
         z: (selectedObject.rotation.z * 180) / Math.PI,
       });
+
+      // Оновлюємо тільки якщо значення реально змінились (щоб не дергати ре-рендери)
+      setPosStr(prev =>
+        prev.x !== newPosStr.x || prev.y !== newPosStr.y || prev.z !== newPosStr.z ? newPosStr : prev
+      );
+      setScaleStr(prev =>
+        prev.x !== newScaleStr.x || prev.y !== newScaleStr.y || prev.z !== newScaleStr.z ? newScaleStr : prev
+      );
+      setRotStr(prev =>
+        prev.x !== newRotStr.x || prev.y !== newRotStr.y || prev.z !== newRotStr.z ? newRotStr : prev
+      );
     };
 
     const interval = setInterval(updateFromObject, 100);
@@ -133,28 +142,56 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
     setIsNameDialogOpen(false);
   };
 
-  const handlePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    const newPosition = { ...position, [axis]: value };
-    setPosition(newPosition);
-    onUpdateObject({ position: newPosition });
+  // Безпечний парсинг: ігноруємо NaN (дозволяємо вводити "-", ".", "" без скидання)
+  const safeParseFloat = (val: string): number | null => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? null : parsed;
   };
 
-  const handleScaleChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    const newScale = { ...scale, [axis]: value };
-    setScale(newScale);
-    onUpdateObject({ scale: newScale });
+  const handlePositionChange = (axis: 'x' | 'y' | 'z', strVal: string) => {
+    setPosStr(prev => ({ ...prev, [axis]: strVal }));
+    const val = safeParseFloat(strVal);
+    if (val !== null) {
+      const current = {
+        x: safeParseFloat(posStr.x) ?? 0,
+        y: safeParseFloat(posStr.y) ?? 0,
+        z: safeParseFloat(posStr.z) ?? 0,
+      };
+      onUpdateObject({ position: { ...current, [axis]: val } });
+    }
   };
 
-  const handleRotationChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    const newRotation = { ...rotation, [axis]: value };
-    setRotation(newRotation);
-    onUpdateObject({
-      rotation: {
-        x: (newRotation.x * Math.PI) / 180,
-        y: (newRotation.y * Math.PI) / 180,
-        z: (newRotation.z * Math.PI) / 180,
-      },
-    });
+  const handleScaleChange = (axis: 'x' | 'y' | 'z', strVal: string) => {
+    setScaleStr(prev => ({ ...prev, [axis]: strVal }));
+    const val = safeParseFloat(strVal);
+    if (val !== null && val !== 0) {
+      const current = {
+        x: safeParseFloat(scaleStr.x) ?? 1,
+        y: safeParseFloat(scaleStr.y) ?? 1,
+        z: safeParseFloat(scaleStr.z) ?? 1,
+      };
+      onUpdateObject({ scale: { ...current, [axis]: val } });
+    }
+  };
+
+  const handleRotationChange = (axis: 'x' | 'y' | 'z', strVal: string) => {
+    setRotStr(prev => ({ ...prev, [axis]: strVal }));
+    const val = safeParseFloat(strVal);
+    if (val !== null) {
+      const current = {
+        x: safeParseFloat(rotStr.x) ?? 0,
+        y: safeParseFloat(rotStr.y) ?? 0,
+        z: safeParseFloat(rotStr.z) ?? 0,
+      };
+      const newRot = { ...current, [axis]: val };
+      onUpdateObject({
+        rotation: {
+          x: (newRot.x * Math.PI) / 180,
+          y: (newRot.y * Math.PI) / 180,
+          z: (newRot.z * Math.PI) / 180,
+        },
+      });
+    }
   };
 
   const handleColorChange = (newColor: string) => {
@@ -165,18 +202,23 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
 
   const handleMaterialTypeChange = (type: 'standard' | 'wireframe' | 'points') => {
     setMaterialType(type);
+    // Якщо перемикаємо через Select — синхронізуємо wireframe стейт
+    if (type === 'wireframe') setWireframe(true);
+    else if (type === 'standard') setWireframe(false);
     onUpdateObject({ materialType: type });
   };
 
+  // Wireframe через onUpdateObject — більше не мутує матеріал напряму
   const handleWireframeChange = (checked: boolean) => {
     setWireframe(checked);
-    if (selectedObject) {
-      const mesh = selectedObject as THREE.Mesh;
-      if (mesh.material) {
-        const material = mesh.material as THREE.MeshStandardMaterial;
-        material.wireframe = checked;
-      }
-    }
+    const newType = checked ? 'wireframe' : 'standard';
+    setMaterialType(newType);
+    onUpdateObject({ materialType: newType });
+  };
+
+  const focusProps = {
+    onFocus: () => { focusCountRef.current += 1; },
+    onBlur: () => { focusCountRef.current = Math.max(0, focusCountRef.current - 1); },
   };
 
   if (!selectedObject) {
@@ -243,10 +285,8 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
             onChange={(e) => setTempName(e.target.value)}
             margin="dense"
             sx={{ mt: 1 }}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleConfirmNameChange();
-              }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleConfirmNameChange();
             }}
           />
         </DialogContent>
@@ -267,30 +307,19 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
         Позиція
       </Typography>
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <TextField
-          label="X"
-          type="number"
-          value={position.x.toFixed(2)}
-          onChange={(e) => handlePositionChange('x', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
-        <TextField
-          label="Y"
-          type="number"
-          value={position.y.toFixed(2)}
-          onChange={(e) => handlePositionChange('y', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
-        <TextField
-          label="Z"
-          type="number"
-          value={position.z.toFixed(2)}
-          onChange={(e) => handlePositionChange('z', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
+        {(['x', 'y', 'z'] as const).map(axis => (
+          <TextField
+            key={axis}
+            label={axis.toUpperCase()}
+            type="number"
+            value={posStr[axis]}
+            onChange={(e) => handlePositionChange(axis, e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+            inputProps={{ step: 0.1 }}
+            {...focusProps}
+          />
+        ))}
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -300,33 +329,19 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
         Масштаб
       </Typography>
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <TextField
-          label="X"
-          type="number"
-          value={scale.x.toFixed(3)}
-          onChange={(e) => handleScaleChange('x', parseFloat(e.target.value) || 0.001)}
-          size="small"
-          sx={{ flex: 1 }}
-          inputProps={{ step: 0.1 }}
-        />
-        <TextField
-          label="Y"
-          type="number"
-          value={scale.y.toFixed(3)}
-          onChange={(e) => handleScaleChange('y', parseFloat(e.target.value) || 0.001)}
-          size="small"
-          sx={{ flex: 1 }}
-          inputProps={{ step: 0.1 }}
-        />
-        <TextField
-          label="Z"
-          type="number"
-          value={scale.z.toFixed(3)}
-          onChange={(e) => handleScaleChange('z', parseFloat(e.target.value) || 0.001)}
-          size="small"
-          sx={{ flex: 1 }}
-          inputProps={{ step: 0.1 }}
-        />
+        {(['x', 'y', 'z'] as const).map(axis => (
+          <TextField
+            key={axis}
+            label={axis.toUpperCase()}
+            type="number"
+            value={scaleStr[axis]}
+            onChange={(e) => handleScaleChange(axis, e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+            inputProps={{ step: 0.1 }}
+            {...focusProps}
+          />
+        ))}
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -336,30 +351,19 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
         Обертання (градуси)
       </Typography>
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <TextField
-          label="X"
-          type="number"
-          value={rotation.x.toFixed(2)}
-          onChange={(e) => handleRotationChange('x', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
-        <TextField
-          label="Y"
-          type="number"
-          value={rotation.y.toFixed(2)}
-          onChange={(e) => handleRotationChange('y', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
-        <TextField
-          label="Z"
-          type="number"
-          value={rotation.z.toFixed(2)}
-          onChange={(e) => handleRotationChange('z', parseFloat(e.target.value) || 0)}
-          size="small"
-          sx={{ flex: 1 }}
-        />
+        {(['x', 'y', 'z'] as const).map(axis => (
+          <TextField
+            key={axis}
+            label={axis.toUpperCase()}
+            type="number"
+            value={rotStr[axis]}
+            onChange={(e) => handleRotationChange(axis, e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+            inputProps={{ step: 1 }}
+            {...focusProps}
+          />
+        ))}
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -418,4 +422,3 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
     </Box>
   );
 };
-

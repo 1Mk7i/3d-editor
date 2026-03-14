@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Editor from '@/components/UI/Layaout/Editor';
+import Editor from '@/components/UI/Layaout/EditField';
 
 const Home: React.FC = () => {
   return <Editor />;
