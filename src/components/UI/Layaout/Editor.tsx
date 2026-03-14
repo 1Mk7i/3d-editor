@@ -42,7 +42,7 @@ const Editor: React.FC = () => {
 
     React.useEffect(() => {
         setIsMounted(true);
-        
+
         // На мобільних пристроях автоматично встановлюємо повноекранний режим через CSS
         if (isMobile) {
             // Додаємо клас для повноекранного режиму
@@ -117,7 +117,7 @@ const Editor: React.FC = () => {
     const [fileOperation, setFileOperation] = React.useState<FileOperation>('export');
     const [workshopDialogOpen, setWorkshopDialogOpen] = React.useState(false);
     const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
-    
+
     // Об'єкт меню
     const [objectMenuAnchor, setObjectMenuAnchor] = React.useState<null | HTMLElement>(null);
     const [objectSelectorDialogOpen, setObjectSelectorDialogOpen] = React.useState(false);
@@ -145,7 +145,7 @@ const Editor: React.FC = () => {
                     // Визначаємо формат за розширенням файлу
                     const fileName = file.name.toLowerCase();
                     let format: FileFormat = 'json';
-                    
+
                     if (fileName.endsWith('.json')) format = 'json';
                     else if (fileName.endsWith('.gltf')) format = 'gltf';
                     else if (fileName.endsWith('.glb')) format = 'glb';
@@ -164,12 +164,12 @@ const Editor: React.FC = () => {
                     try {
                         // Імпортуємо модель використовуючи Three.js завантажувачі
                         const importedObjects = await importModelFromFile(file, format);
-                        
+
                         if (importedObjects.length === 0) {
                             alert('Файл не містить об\'єктів для імпорту');
                             return;
                         }
-                        
+
                         // Додаємо об'єкти до сцени
                         let importedCount = 0;
                         importedObjects.forEach((obj, index) => {
@@ -181,7 +181,7 @@ const Editor: React.FC = () => {
                                 console.error('Помилка при додаванні об\'єкта:', error);
                             }
                         });
-                        
+
                         if (importedCount > 0) {
                             console.log(`Успішно імпортовано ${importedCount} об'єктів`);
                         } else {
@@ -193,12 +193,12 @@ const Editor: React.FC = () => {
                             try {
                                 const json = await loadFileAsText(file);
                                 const objectsData = importFromJSON(json);
-                                
+
                                 if (objectsData.length === 0) {
                                     alert('Файл не містить об\'єктів для імпорту');
                                     return;
                                 }
-                                
+
                                 let importedCount = 0;
                                 objectsData.forEach(objData => {
                                     try {
@@ -209,7 +209,7 @@ const Editor: React.FC = () => {
                                         console.error('Помилка при створенні об\'єкта:', error);
                                     }
                                 });
-                                
+
                                 if (importedCount > 0) {
                                     console.log(`Успішно імпортовано ${importedCount} об'єктів`);
                                 } else {
@@ -271,6 +271,7 @@ const Editor: React.FC = () => {
         name?: string;
         position?: { x: number; y: number; z: number };
         rotation?: { x: number; y: number; z: number };
+        scale?: { x: number; y: number; z: number };
         color?: number;
         materialType?: 'standard' | 'wireframe' | 'points';
     }) => {
@@ -286,6 +287,11 @@ const Editor: React.FC = () => {
                 position: updates.position,
                 rotation: updates.rotation,
             });
+        }
+
+        // Оновлення масштабу
+        if (updates.scale) {
+            mesh.scale.set(updates.scale.x, updates.scale.y, updates.scale.z);
         }
 
         // Оновлення кольору
@@ -349,7 +355,7 @@ const Editor: React.FC = () => {
                 const objectType = THREE_OBJECT_TYPES.find(obj => obj.id === command.objectType);
                 if (objectType) {
                     const mesh = createThreeObject(objectType);
-                    
+
                     // Застосовуємо параметри з команди
                     if (command.position) {
                         mesh.position.set(command.position.x, command.position.y, command.position.z);
@@ -375,12 +381,12 @@ const Editor: React.FC = () => {
                             });
                         }
                     }
-                    
+
                     sceneManager.addObject(mesh, command.name || objectType.name, mesh.type);
                 }
             } else if (command.action === 'delete' && command.objectId) {
                 let objectId: string | null = null;
-                
+
                 if (command.objectId === 'selected') {
                     objectId = sceneManager.selectedObjectId;
                 } else {
@@ -397,7 +403,7 @@ const Editor: React.FC = () => {
                         }
                     }
                 }
-                
+
                 if (objectId) {
                     sceneManager.removeObject(objectId);
                     console.log(`Об'єкт з ID "${objectId}" видалено`);
@@ -406,7 +412,7 @@ const Editor: React.FC = () => {
                 }
             } else if (command.action === 'update' && command.objectId) {
                 let objectId: string | null = null;
-                
+
                 if (command.objectId === 'selected') {
                     objectId = sceneManager.selectedObjectId;
                 } else {
@@ -423,7 +429,7 @@ const Editor: React.FC = () => {
                         }
                     }
                 }
-                
+
                 if (objectId) {
                     const updates: any = {};
                     if (command.name) updates.name = command.name;
@@ -434,12 +440,12 @@ const Editor: React.FC = () => {
                         updates.color = parseInt(command.color.replace('#', ''), 16);
                     }
                     if (command.materialType) updates.materialType = command.materialType;
-                    
+
                     handleUpdateObject(objectId, updates);
                 }
             } else if (command.action === 'select' && command.objectId) {
                 let objectId: string | null = null;
-                
+
                 if (command.objectId === 'selected') {
                     objectId = sceneManager.selectedObjectId;
                 } else {
@@ -456,7 +462,7 @@ const Editor: React.FC = () => {
                         }
                     }
                 }
-                
+
                 if (objectId) {
                     sceneManager.selectObject(objectId);
                 } else {
@@ -548,8 +554,8 @@ const Editor: React.FC = () => {
                         onClose={handleFileMenuClose}
                         PaperProps={{
                             sx: {
-                                maxHeight: isMobile 
-                                    ? 'calc(100vh - 100px)' 
+                                maxHeight: isMobile
+                                    ? 'calc(100vh - 100px)'
                                     : 'calc(100vh - 200px)',
                                 width: 'auto',
                                 minWidth: 200,
@@ -620,7 +626,7 @@ const Editor: React.FC = () => {
             </AppBar>
 
             <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', minWidth: 0 }}>
-                <LeftMenu 
+                <LeftMenu
                     isEditMode={sceneManager.isEditMode}
                     selectedObjectId={sceneManager.selectedObjectId}
                     onAddObject={() => setObjectSelectorDialogOpen(true)}
@@ -679,7 +685,7 @@ const Editor: React.FC = () => {
                     }}
                 >
                     {isRightMenuVisible && (
-                        <RightMenu 
+                        <RightMenu
                             treeData={sceneTree.treeData}
                             onUpdateTree={sceneTree.updateTree}
                             selectedObjectId={sceneManager.selectedObjectId}
@@ -765,11 +771,11 @@ const Editor: React.FC = () => {
                             onRestore={() => windowManager.restoreWindow(window.id)}
                             onFocus={() => windowManager.focusWindow(window.id)}
                         >
-                            <Chat 
-                              onClose={() => windowManager.closeWindow('chat')}
-                              onAgentCommand={handleAgentCommand}
-                              selectedObjectId={sceneManager.selectedObjectId}
-                              objects={sceneManager.objects}
+                            <Chat
+                                onClose={() => windowManager.closeWindow('chat')}
+                                onAgentCommand={handleAgentCommand}
+                                selectedObjectId={sceneManager.selectedObjectId}
+                                objects={sceneManager.objects}
                             />
                         </Window>
                     );

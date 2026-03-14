@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatPropsWithSceneManager } from './types';
+import { MessageBubble } from './MessageBubble';
 import { useChat } from '@/hooks/useChat';
 import { generateAgentPrompt, parseAgentCommand, AgentCommand } from '@/shared/prompts/agentPrompt';
 import { CONNECTION_STATUS } from '@/shared/constants/gemini.constants';
@@ -19,15 +20,11 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Tooltip,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
 import {
   Send as SendIcon,
-  ContentCopy as CopyIcon,
-  Check as CheckIcon,
-  Close as CloseIcon,
   Chat as ChatIcon,
   SmartToy as AgentIcon,
 } from '@mui/icons-material';
@@ -46,17 +43,13 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   const [userApiKey, setUserApiKey] = useState<string>('');
   const theme = useTheme();
 
-  // load key from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem('geminiApiKey');
-      if (stored) {
-        setUserApiKey(stored);
-      }
+      if (stored) setUserApiKey(stored);
     } catch {}
   }, []);
 
-  // persist key whenever it changes
   useEffect(() => {
     try {
       if (userApiKey) {
@@ -66,6 +59,33 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
       }
     } catch {}
   }, [userApiKey]);
+
+  const chatModes = [
+    {
+      value: 'chat' as ChatMode,
+      icon: <ChatIcon sx={{ mr: 0.5, fontSize: 16 }} />,
+      label: 'Чат',
+      placeholder: 'Почніть розмову з AI...',
+      example: null,
+    },
+    {
+      value: 'agent' as ChatMode,
+      icon: <AgentIcon sx={{ mr: 0.5, fontSize: 16 }} />,
+      label: 'Агент',
+      placeholder: 'Введіть команду для управління 3D сценою...',
+      example: 'Приклад: "Створи червоний куб", "Додай сферу на позиції 2, 0, 0", "Оберни вибраний об\'єкт на 90 градусів"',
+    },
+  ];
+
+  const currentModeConfig = chatModes.find(m => m.value === chatMode);
+
+  const connectionStatusConfig = {
+    [CONNECTION_STATUS.IDLE]: { color: 'default' as const, text: 'Ініціалізація...' },
+    [CONNECTION_STATUS.CONNECTING]: { color: 'warning' as const, text: 'Підключення...' },
+    [CONNECTION_STATUS.CONNECTED]: { color: 'success' as const, text: 'Підключено' },
+    [CONNECTION_STATUS.ERROR]: { color: 'error' as const, text: 'Помилка підключення' },
+    [CONNECTION_STATUS.DISCONNECTED]: { color: 'default' as const, text: 'Відключено' },
+  };
 
   // Формуємо інформацію про сцену для агента
   const getSceneInfo = useCallback((): string => {
@@ -195,33 +215,8 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     }
   }, []);
 
-  const getConnectionStatusColor = () => {
-    switch (chatState.connectionStatus) {
-      case CONNECTION_STATUS.CONNECTING:
-        return 'warning';
-      case CONNECTION_STATUS.CONNECTED:
-        return 'success';
-      case CONNECTION_STATUS.ERROR:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getConnectionStatusText = () => {
-    switch (chatState.connectionStatus) {
-      case CONNECTION_STATUS.CONNECTING:
-        return 'Підключення...';
-      case CONNECTION_STATUS.CONNECTED:
-        return 'Підключено';
-      case CONNECTION_STATUS.ERROR:
-        return 'Помилка підключення';
-      case CONNECTION_STATUS.DISCONNECTED:
-        return 'Відключено';
-      default:
-        return 'Не підключено';
-    }
-  };
+  const currentConnectionStatus = connectionStatusConfig[chatState.connectionStatus] || 
+    { color: 'default' as const, text: 'Не підключено' };
 
   const getCurrentModelDisplayName = () => {
     const model = availableModels.find(m => m.name === chatState.selectedModel);
@@ -276,18 +271,16 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
               size="small"
               sx={{ mr: 1 }}
             >
-              <ToggleButton value="chat">
-                <ChatIcon sx={{ mr: 0.5, fontSize: 16 }} />
-                Чат
-              </ToggleButton>
-              <ToggleButton value="agent">
-                <AgentIcon sx={{ mr: 0.5, fontSize: 16 }} />
-                Агент
-              </ToggleButton>
+              {chatModes.map((mode) => (
+                <ToggleButton key={mode.value} value={mode.value}>
+                  {mode.icon}
+                  {mode.label}
+                </ToggleButton>
+              ))}
             </ToggleButtonGroup>
             <Chip
-              label={getConnectionStatusText()}
-              color={getConnectionStatusColor() as any}
+              label={currentConnectionStatus.text}
+              color={currentConnectionStatus.color as any}
               size="small"
               sx={{ height: 20, fontSize: '0.7rem' }}
             />
@@ -302,9 +295,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
             )}
           </Box>
         </Box>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
       </Paper>
 
       {/* Model Selector */}
@@ -384,14 +374,11 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
             }}
           >
             <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-              {chatMode === 'agent' 
-                ? 'Введіть команду для управління 3D сценою...'
-                : 'Почніть розмову з AI...'}
+              {currentModeConfig?.placeholder}
             </Typography>
-            {chatMode === 'agent' && (
+            {currentModeConfig?.example && (
               <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', px: 2 }}>
-                Приклад: "Створи червоний куб", "Додай сферу на позиції 2, 0, 0", 
-                "Оберни вибраний об'єкт на 90 градусів"
+                {currentModeConfig.example}
               </Typography>
             )}
           </Box>
@@ -407,76 +394,11 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
                   }}
                 />
               )}
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 2,
-                  maxWidth: '80%',
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  bgcolor: msg.sender === 'user' ? 'primary.main' : 'background.paper',
-                  border: msg.error ? 1 : 0,
-                  borderColor: msg.error ? 'error.main' : 'transparent',
-                  position: 'relative',
-                  '&:hover .copy-button': {
-                    opacity: 1,
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      flex: 1,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      color: msg.sender === 'user' ? 'primary.contrastText' : 'text.primary',
-                    }}
-                  >
-                    {msg.text}
-                  </Typography>
-                  <Tooltip title={copiedMessageId === msg.id ? 'Скопійовано!' : 'Копіювати'}>
-                    <IconButton
-                      size="small"
-                      className="copy-button"
-                      onClick={() => handleCopyMessage(msg.text, msg.id)}
-                      sx={{
-                        opacity: 0,
-                        transition: 'opacity 0.2s',
-                        color: msg.sender === 'user' ? 'primary.contrastText' : 'text.secondary',
-                        '&:hover': {
-                          bgcolor: msg.sender === 'user' 
-                            ? 'rgba(255, 255, 255, 0.2)' 
-                            : 'rgba(255, 255, 255, 0.1)',
-                        },
-                      }}
-                    >
-                      {copiedMessageId === msg.id ? (
-                        <CheckIcon fontSize="small" />
-                      ) : (
-                        <CopyIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                {msg.timestamp && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      mt: 0.5,
-                      display: 'block',
-                      opacity: 0.7,
-                      textAlign: msg.sender === 'user' ? 'right' : 'left',
-                      color: msg.sender === 'user' ? 'primary.contrastText' : 'text.secondary',
-                    }}
-                  >
-                    {new Date(msg.timestamp).toLocaleTimeString('uk-UA', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Typography>
-                )}
-              </Paper>
+              <MessageBubble
+                message={msg}
+                isCopied={copiedMessageId === msg.id}
+                onCopy={() => handleCopyMessage(msg.text, msg.id)}
+              />
             </React.Fragment>
           ))
         )}
@@ -526,7 +448,7 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
           <TextField
             fullWidth
             size="small"
-            placeholder="Введіть повідомлення..."
+            placeholder={currentModeConfig?.placeholder || 'Введіть повідомлення...'}
             value={chatState.inputText}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}

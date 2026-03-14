@@ -4,10 +4,10 @@ import React from 'react';
 import SceneTree from '@/components/UI/Menu/SceneTree';
 import { ObjectProperties } from './ObjectProperties';
 import {
-  Paper,
-  Typography,
-  Box,
-  Divider,
+    Paper,
+    Typography,
+    Box,
+    Divider,
 } from '@mui/material';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import * as THREE from 'three';
@@ -22,6 +22,7 @@ interface RightMenuProps {
         name?: string;
         position?: { x: number; y: number; z: number };
         rotation?: { x: number; y: number; z: number };
+        scale?: { x: number; y: number; z: number };
         color?: number;
         materialType?: 'standard' | 'wireframe' | 'points';
     }) => void;
@@ -44,6 +45,7 @@ export const RightMenu: React.FC<RightMenuProps> = ({
         name?: string;
         position?: { x: number; y: number; z: number };
         rotation?: { x: number; y: number; z: number };
+        scale?: { x: number; y: number; z: number };
         color?: number;
         materialType?: 'standard' | 'wireframe' | 'points';
     }) => {
@@ -84,8 +86,8 @@ export const RightMenu: React.FC<RightMenuProps> = ({
                     </Typography>
                 </Box>
                 <Box sx={{ flex: 1, overflow: 'auto' }}>
-                    <SceneTree 
-                        treeData={treeData} 
+                    <SceneTree
+                        treeData={treeData}
                         updateTree={onUpdateTree}
                         selectedObjectId={selectedObjectId}
                         onSelectObject={onSelectObject}

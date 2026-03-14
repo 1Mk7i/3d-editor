@@ -31,6 +31,7 @@ interface ObjectPropertiesProps {
     name?: string;
     position?: { x: number; y: number; z: number };
     rotation?: { x: number; y: number; z: number };
+    scale?: { x: number; y: number; z: number };
     color?: number;
     materialType?: 'standard' | 'wireframe' | 'points';
   }) => void;
@@ -44,6 +45,7 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
   const [tempName, setTempName] = useState('');
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
+  const [scale, setScale] = useState({ x: 1, y: 1, z: 1 });
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [color, setColor] = useState('#ff0000');
   const [materialType, setMaterialType] = useState<'standard' | 'wireframe' | 'points'>('standard');
@@ -56,6 +58,11 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
         x: selectedObject.position.x,
         y: selectedObject.position.y,
         z: selectedObject.position.z,
+      });
+      setScale({
+        x: selectedObject.scale.x,
+        y: selectedObject.scale.y,
+        z: selectedObject.scale.z,
       });
       setRotation({
         x: (selectedObject.rotation.x * 180) / Math.PI,
@@ -84,7 +91,7 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
     }
   }, [selectedObject]);
 
-  // Синхронізація зміни позиції та обертання в реальному часі
+  // Синхронізація зміни позиції, масштабу та обертання в реальному часі
   useEffect(() => {
     if (!selectedObject) return;
 
@@ -93,6 +100,11 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
         x: selectedObject.position.x,
         y: selectedObject.position.y,
         z: selectedObject.position.z,
+      });
+      setScale({
+        x: selectedObject.scale.x,
+        y: selectedObject.scale.y,
+        z: selectedObject.scale.z,
       });
       setRotation({
         x: (selectedObject.rotation.x * 180) / Math.PI,
@@ -125,6 +137,12 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
     const newPosition = { ...position, [axis]: value };
     setPosition(newPosition);
     onUpdateObject({ position: newPosition });
+  };
+
+  const handleScaleChange = (axis: 'x' | 'y' | 'z', value: number) => {
+    const newScale = { ...scale, [axis]: value };
+    setScale(newScale);
+    onUpdateObject({ scale: newScale });
   };
 
   const handleRotationChange = (axis: 'x' | 'y' | 'z', value: number) => {
@@ -272,6 +290,42 @@ export const ObjectProperties: React.FC<ObjectPropertiesProps> = ({
           onChange={(e) => handlePositionChange('z', parseFloat(e.target.value) || 0)}
           size="small"
           sx={{ flex: 1 }}
+        />
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Масштаб */}
+      <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+        Масштаб
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <TextField
+          label="X"
+          type="number"
+          value={scale.x.toFixed(3)}
+          onChange={(e) => handleScaleChange('x', parseFloat(e.target.value) || 0.001)}
+          size="small"
+          sx={{ flex: 1 }}
+          inputProps={{ step: 0.1 }}
+        />
+        <TextField
+          label="Y"
+          type="number"
+          value={scale.y.toFixed(3)}
+          onChange={(e) => handleScaleChange('y', parseFloat(e.target.value) || 0.001)}
+          size="small"
+          sx={{ flex: 1 }}
+          inputProps={{ step: 0.1 }}
+        />
+        <TextField
+          label="Z"
+          type="number"
+          value={scale.z.toFixed(3)}
+          onChange={(e) => handleScaleChange('z', parseFloat(e.target.value) || 0.001)}
+          size="small"
+          sx={{ flex: 1 }}
+          inputProps={{ step: 0.1 }}
         />
       </Box>
 
