@@ -2,7 +2,7 @@
 
 import React from 'react';
 import ThreeScene from '@/components/UI/Scene/ThreeScene';
-import ContextMenu from '@/components/ContextMenu/ContextMenu';
+import { ContextMenu } from '@/components/ContextMenu/ContextMenu';
 import { useContextMenu } from '@/hooks/useContextMenu';
 import { useWindowManager } from '@/hooks/useWindowManager';
 import { useSceneManager } from '@/hooks/useSceneManager';

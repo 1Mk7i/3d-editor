@@ -2,10 +2,9 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   user-select: none;
   -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   animation: contextMenuFadeIn 0.15s ease-out;
   z-index: 10000;
+  pointer-events: none; /* Щоб сам контейнер не перехоплював кліки */
 }
 
 @keyframes contextMenuFadeIn {
@@ -28,15 +27,34 @@
     0 4px 16px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   padding: 4px;
-  min-width: 200px;
-  max-width: 300px;
+  width: 250px;
   backdrop-filter: blur(16px);
-  overflow: visible;
   position: relative;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  pointer-events: auto;
+  
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px); 
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.context-menu-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.context-menu-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.context-menu-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.context-menu-content::-webkit-scrollbar-thumb:hover {
+  background: #3daee9;
 }
 
 .context-menu-item {
@@ -50,20 +68,11 @@
   font-size: 14px;
   position: relative;
   margin: 1px 0;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -webkit-touch-callout: none;
+  flex-shrink: 0; /* Щоб елементи не стискалися при скролі */
 }
 
 .context-menu-item[data-has-submenu="true"] {
   background: linear-gradient(90deg, transparent 0%, rgba(61, 174, 233, 0.05) 100%);
-}
-
-.context-menu-item[data-has-submenu="true"]:hover:not(.disabled) {
-  background: linear-gradient(135deg, #3daee9 0%, #2980b9 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .context-menu-item:hover:not(.disabled) {
@@ -88,57 +97,48 @@
   color: #ffffff;
 }
 
-.context-menu-item.danger:active:not(.disabled) {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
-}
-
 .context-menu-item-content {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 8px;
+  gap: 10px;
 }
 
 .context-menu-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  font-size: 14px;
-  opacity: 0.9;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.context-menu-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .context-menu-label {
   flex: 1;
   font-weight: 400;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .context-menu-shortcut {
   color: #a1a8ad;
-  font-size: 12px;
-  font-weight: 400;
-  opacity: 0.8;
+  font-size: 11px;
   margin-left: auto;
-}
-
-.context-menu-item:hover:not(.disabled) .context-menu-shortcut {
-  color: rgba(255, 255, 255, 0.8);
+  padding-left: 12px;
+  opacity: 0.7;
 }
 
 .context-menu-arrow {
   color: #a1a8ad;
-  font-size: 12px;
+  font-size: 10px;
   margin-left: 8px;
-  opacity: 0.8;
-  transition: transform 0.12s ease;
-  font-weight: bold;
-}
-
-.context-menu-item:hover:not(.disabled) .context-menu-arrow {
-  color: rgba(255, 255, 255, 0.9);
-  transform: translateX(2px);
 }
 
 .context-menu-separator {
@@ -153,127 +153,35 @@
   opacity: 0.6;
 }
 
-/* Focus styles for accessibility */
-.context-menu-item:focus {
-  outline: 2px solid #3daee9;
-  outline-offset: -2px;
-}
 
-/* Dark theme adjustments */
-@media (prefers-color-scheme: dark) {
-  .context-menu-content {
-    background: #2a2e32;
-    border-color: #4a5057;
-  }
-  
-  .context-menu-item {
-    color: #eff0f1;
-  }
-  
-  .context-menu-separator {
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      #4a5057 10%, 
-      #4a5057 90%, 
-      transparent 100%
-    );
-  }
-}
-
-/* Light theme */
 @media (prefers-color-scheme: light) {
   .context-menu-content {
     background: #fcfcfc;
     border-color: #bdc3c7;
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.15),
-      0 2px 4px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: #2c3e50;
   }
   
   .context-menu-item {
     color: #2c3e50;
   }
-  
-  .context-menu-item:hover:not(.disabled) {
-    background: linear-gradient(135deg, #3daee9 0%, #2980b9 100%);
-    color: #ffffff;
-  }
-  
-  .context-menu-shortcut {
-    color: #7f8c8d;
-  }
-  
-  .context-menu-arrow {
-    color: #7f8c8d;
-  }
-  
-  .context-menu-separator {
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      #bdc3c7 10%, 
-      #bdc3c7 90%, 
-      transparent 100%
-    );
+
+  .context-menu-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
   }
 }
 
-/* High contrast mode */
 @media (prefers-contrast: high) {
   .context-menu-content {
-    border-width: 2px;
-  }
-  
-  .context-menu-item:hover:not(.disabled) {
-    background: #000000;
-    color: #ffffff;
-    border: 1px solid #ffffff;
+    border: 2px solid currentColor;
   }
 }
 
-/* Контейнер для підменю */
-.context-menu-submenu-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10001;
-  pointer-events: auto;
-}
-
-/* Стилі для підменю */
 .submenu {
-  z-index: 10001 !important;
-  pointer-events: auto !important;
+  position: fixed;
+  z-index: 10001;
 }
 
 .submenu .context-menu-content {
-  /* Переконуємося, що немає зайвих margin чи padding */
-  margin: 0;
-  position: relative;
-  pointer-events: auto !important;
-}
-
-.submenu .context-menu-item {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-.submenu .context-menu-item:hover {
-  pointer-events: auto !important;
-}
-
-/* Переконуємося, що підменю видимі */
-.context-menu-item {
-  position: relative;
-}
-
-/* Додаткові стилі для кращої видимості */
-.context-menu {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  animation: contextMenuFadeIn 0.15s ease-out;
-  z-index: 10000;
+  max-height: inherit; 
 }

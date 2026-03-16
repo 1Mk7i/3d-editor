@@ -1,186 +1,50 @@
 import React from 'react';
+import * as THREE from 'three';
 import { ContextMenuItem } from '../components/ContextMenu/ContextMenu';
 import {
-  CopyIcon,
-  CutIcon,
-  PasteIcon,
   DeleteIcon,
-  EditIcon,
-  FileIcon,
-  FolderIcon,
-  RefreshIcon,
   SettingsIcon,
   InfoIcon,
-  CalculatorIcon,
   WindowIcon,
   CreateIcon,
 } from '../components/ContextMenu/Icons';
 
-import { Mesh, BoxGeometry, SphereGeometry, CylinderGeometry, TorusGeometry, MeshStandardMaterial } from 'three';
 import { WindowType } from '@/shared/types/common.types';
 import { SceneManager } from '@/shared/types/scene.types';
-import { MATERIAL_COLORS, GEOMETRY_DEFAULTS } from '@/shared/constants/scene.constants';
 import { logger, logError } from '@/shared/utils/logger';
+// Імпортуємо ваші типи та константи
+import { THREE_OBJECT_TYPES, ThreeObjectType, createThreeObject } from '../shared/constants/threeObjects';
 
-/**
- * Створює конфігурацію контекстного меню
- * @param openWindow - функція для відкриття вікон з useWindowManager
- * @param sceneManager - менеджер сцени для додавання об'єктів
- * @returns масив елементів контекстного меню
- */
 export const createContextMenuItems = (
   openWindow: (type: WindowType) => void,
   sceneManager: SceneManager
 ): ContextMenuItem[] => {
-  logger.debug('CONTEXT_MENU', 'Creating context menu items', { sceneManager });
   
+  // Функція-хелпер для створення об'єкта
+  const handleCreateObject = (type: ThreeObjectType) => {
+    logger.debug('CONTEXT_MENU', `Create ${type.id} clicked`);
+    try {
+      const mesh = createThreeObject(type);
+      sceneManager.addObject(mesh, type.name, 'Mesh');
+      logger.info(`${type.name} added successfully`);
+    } catch (error) {
+      logError(`adding ${type.id} to scene`, error);
+    }
+  };
+
   return [
     {
       id: 'create',
       label: 'Створити',
       icon: <CreateIcon />,
-      submenu: [
-        {
-          id: 'create-cube',
-          label: 'Куб',
-          icon: <CreateIcon />,
-          onClick: () => {
-            logger.debug('CONTEXT_MENU', 'Create cube clicked');
-            try {
-              const geometry = new BoxGeometry(
-                GEOMETRY_DEFAULTS.CUBE.width,
-                GEOMETRY_DEFAULTS.CUBE.height,
-                GEOMETRY_DEFAULTS.CUBE.depth
-              );
-              const material = new MeshStandardMaterial({ 
-                color: MATERIAL_COLORS.CUBE,
-                emissive: MATERIAL_COLORS.UNSELECTED 
-              });
-              const cube = new Mesh(geometry, material);
-              cube.position.set(0, 0, 0);
-              cube.name = 'Куб';
-              
-              sceneManager.addObject(cube, 'Куб', 'Mesh');
-              logger.info('Cube added successfully');
-            } catch (error) {
-              logError('adding cube to scene', error);
-            }
-          }
-        },
-        {
-          id: 'create-sphere',
-          label: 'Сфера',
-          icon: <CreateIcon />,
-          onClick: () => {
-            logger.debug('CONTEXT_MENU', 'Create sphere clicked');
-            try {
-              const geometry = new SphereGeometry(
-                GEOMETRY_DEFAULTS.SPHERE.radius,
-                GEOMETRY_DEFAULTS.SPHERE.widthSegments,
-                GEOMETRY_DEFAULTS.SPHERE.heightSegments
-              );
-              const material = new MeshStandardMaterial({ 
-                color: MATERIAL_COLORS.SPHERE,
-                emissive: MATERIAL_COLORS.UNSELECTED 
-              });
-              const sphere = new Mesh(geometry, material);
-              sphere.position.set(0, 0, 0);
-              sphere.name = 'Сфера';
-              
-              sceneManager.addObject(sphere, 'Сфера', 'Mesh');
-              logger.info('Sphere added successfully');
-            } catch (error) {
-              logError('adding sphere to scene', error);
-            }
-          }
-        },
-        {
-          id: 'create-cylinder',
-          label: 'Циліндр',
-          icon: <CreateIcon />,
-          onClick: () => {
-            logger.debug('CONTEXT_MENU', 'Create cylinder clicked');
-            try {
-              const geometry = new CylinderGeometry(
-                GEOMETRY_DEFAULTS.CYLINDER.radiusTop,
-                GEOMETRY_DEFAULTS.CYLINDER.radiusBottom,
-                GEOMETRY_DEFAULTS.CYLINDER.height,
-                GEOMETRY_DEFAULTS.CYLINDER.radialSegments
-              );
-              const material = new MeshStandardMaterial({ 
-                color: MATERIAL_COLORS.CYLINDER,
-                emissive: MATERIAL_COLORS.UNSELECTED
-              });
-              const cylinder = new Mesh(geometry, material);
-              cylinder.position.set(0, 0, 0);
-              cylinder.name = 'Циліндр';
-              
-              sceneManager.addObject(cylinder, 'Циліндр', 'Mesh');
-              logger.info('Cylinder added successfully');
-            } catch (error) {
-              logError('adding cylinder to scene', error);
-            }
-          }
-        },
-        {
-          id: 'create-torus',
-          label: 'Тор',
-          icon: <CreateIcon />,
-          onClick: () => {
-            logger.debug('CONTEXT_MENU', 'Create torus clicked');
-            try {
-              const geometry = new TorusGeometry(
-                GEOMETRY_DEFAULTS.TORUS.radius,
-                GEOMETRY_DEFAULTS.TORUS.tube,
-                GEOMETRY_DEFAULTS.TORUS.radialSegments,
-                GEOMETRY_DEFAULTS.TORUS.tubularSegments
-              );
-              const material = new MeshStandardMaterial({
-                color: MATERIAL_COLORS.TORUS,
-                emissive: MATERIAL_COLORS.UNSELECTED
-              });
-              const torus = new Mesh(geometry, material);
-              torus.position.set(0, 0, 0);
-              torus.name = 'Тор';
-
-              sceneManager.addObject(torus, 'Тор', 'Mesh');
-              logger.info('Torus added successfully');
-            } catch (error) {
-              logError('adding torus to scene', error);
-            }
-          }
-        },
-      ]
+      submenu: THREE_OBJECT_TYPES.map((type) => ({
+        id: `create-${type.id}`,
+        label: type.name,
+        icon: type.icon ? <img src={type.icon} alt="" style={{ width: 16, height: 16, filter: 'brightness(0) invert(1) drop-shadow(0.5px 0px 0px rgba(255,255,255,0.5)) drop-shadow(-0.5px 0px 0px rgba(255,255,255,0.5))' }} /> : <CreateIcon />,
+        onClick: () => handleCreateObject(type),
+      })),
     },
-    {
-      id: 'separator1',
-      separator: true,
-    },
-    // {
-    //   id: 'cut',
-    //   label: 'Вирізати',
-    //   icon: <CutIcon />,
-    //   shortcut: 'Ctrl+X',
-    //   onClick: () => logger.info('Cut action triggered'),
-    // },
-    // {
-    //   id: 'copy',
-    //   label: 'Копіювати',
-    //   icon: <CopyIcon />,
-    //   shortcut: 'Ctrl+C',
-    //   onClick: () => logger.info('Copy action triggered'),
-    // },
-    // {
-    //   id: 'paste',
-    //   label: 'Вставити',
-    //   icon: <PasteIcon />,
-    //   shortcut: 'Ctrl+V',
-    //   onClick: () => logger.info('Paste action triggered'),
-    // },
-    // {
-    //   id: 'separator2',
-    //   separator: true,
-    // },
+    { id: 'sep1', separator: true },
     {
       id: 'delete',
       label: 'Видалити',
@@ -192,10 +56,7 @@ export const createContextMenuItems = (
         }
       },
     },
-    {
-      id: 'separator3',
-      separator: true,
-    },
+    { id: 'sep2', separator: true },
     {
       id: 'windows',
       label: 'Вікна',
@@ -215,10 +76,7 @@ export const createContextMenuItems = (
         }
       ],
     },
-    {
-      id: 'separator4',
-      separator: true,
-    },
+    { id: 'sep3', separator: true },
     {
       id: 'properties',
       label: 'Властивості',
