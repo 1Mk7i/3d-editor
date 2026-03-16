@@ -3,14 +3,36 @@
 import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { CollectionElementProps } from '@/components/UI/Collection/types';
+import { logger } from '@/shared/utils/logger';
 
 export function useSceneManager() {
   const [objects, setObjects] = useState<CollectionElementProps[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate');
+  
+  // Буфер обміну для об'єктів
+  const [clipboard, setClipboard] = useState<THREE.Object3D | null>(null);
 
-  // Додає новий об'єкт у сцену
+  /**
+   * Допоміжна функція для підготовки клонованого об'єкта.
+   * Важливо: Three.js копіює UUID при .clone(), тому його треба міняти вручну.
+   */
+  const prepareClonedMesh = (mesh: THREE.Object3D) => {
+    mesh.uuid = THREE.MathUtils.generateUUID();
+    
+    // Скидаємо підсвітку (emissive), якщо вона була на оригіналі
+    mesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const m = child as THREE.Mesh;
+        if ((m.material as THREE.MeshStandardMaterial).emissive) {
+          (m.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
+        }
+      }
+    });
+    return mesh;
+  };
+
   const addObject = useCallback((mesh: THREE.Object3D, name: string = 'Unnamed Object', type: string = mesh.type) => {
     setObjects(prev => {
       const newObject: CollectionElementProps = {
@@ -25,38 +47,13 @@ export function useSceneManager() {
     });
   }, []);
 
-  const getTreeScene = useCallback(() => {
-    const traverseObject = (obj: THREE.Object3D, collectionObj?: CollectionElementProps): any => {
-      // Використовуємо name з CollectionElementProps, якщо він є, інакше з mesh
-      const name = collectionObj?.name || obj.name || 'Unnamed Object';
-      
-      return {
-        id: obj.uuid,
-        name: name,
-        type: obj.type,
-        shape: (obj as THREE.Mesh).geometry ? (obj as THREE.Mesh).geometry.type : null,
-        children: obj.children.map(child => {
-          // Знаходимо відповідний collection об'єкт для дочірнього елемента
-          const childCollectionObj = collectionObj?.children?.find(c => c.id === child.uuid);
-          return traverseObject(child, childCollectionObj);
-        }),
-      };
-    };
-    
-    return objects.map(obj => traverseObject(obj.mesh, obj));
-  }, [objects]);
-
-  // Видаляє об'єкт зі сцени
   const removeObject = useCallback((id: string) => {
     setObjects(prev => prev.filter(obj => obj.id !== id));
     if (selectedObjectId === id) setSelectedObjectId(null);
   }, [selectedObjectId]);
 
-  // Встановлює виділений об'єкт
   const selectObject = useCallback((id: string) => {
     setSelectedObjectId(id);
-    
-    // Скидаємо ефект виділення для всіх об'єктів
     objects.forEach(o => {
       const mesh = o.mesh as THREE.Mesh;
       const material = mesh?.material as THREE.MeshStandardMaterial;
@@ -66,42 +63,73 @@ export function useSceneManager() {
     });
   }, [objects]);
 
-  // Знімає виділення
   const clearSelection = useCallback(() => {
     setSelectedObjectId(null);
-    // Скидаємо ефект виділення для всіх об'єктів
     objects.forEach(o => {
       const mesh = o.mesh as THREE.Mesh;
       const material = mesh?.material as THREE.MeshStandardMaterial;
-      if (material?.emissive) {
-        material.emissive.setHex(0x000000);
-      }
+      if (material?.emissive) material.emissive.setHex(0x000000);
     });
   }, [objects]);
 
-  // Перемикає режим редагування
-  const toggleEditMode = useCallback(() => {
-    setIsEditMode(prev => !prev);
-  }, []);
+  // --- Функції Дублювання та Буфера ---
 
-  // Змінює режим трансформації
+  const duplicateObject = useCallback((id: string) => {
+    const source = objects.find(obj => obj.id === id);
+    if (source && source.mesh) {
+      const clonedMesh = source.mesh.clone();
+      prepareClonedMesh(clonedMesh);
+      
+      // Зсув, щоб копія не перекривала оригінал
+      clonedMesh.position.x += 1;
+      clonedMesh.position.z += 1;
+      
+      addObject(clonedMesh, `${source.name} (Copy)`, source.type);
+      logger.info(`Object duplicated: ${clonedMesh.uuid}`);
+    }
+  }, [objects, addObject]);
+
+  const copyToClipboard = useCallback((id: string) => {
+    const source = objects.find(obj => obj.id === id);
+    if (source && source.mesh) {
+      const cloneForClipboard = source.mesh.clone();
+      // Очищаємо клон відразу, щоб при вставці не було проблем з ID
+      prepareClonedMesh(cloneForClipboard);
+      setClipboard(cloneForClipboard);
+      logger.info(`Object ${source.name} copied to clipboard`);
+    }
+  }, [objects]);
+
+  const pasteFromClipboard = useCallback(() => {
+    if (clipboard) {
+      const meshToPaste = clipboard.clone();
+      prepareClonedMesh(meshToPaste);
+      
+      meshToPaste.position.x += 0.5;
+      meshToPaste.position.z += 0.5;
+      
+      addObject(meshToPaste, `Pasted ${meshToPaste.name}`, 'Mesh');
+      logger.info('Object pasted from clipboard');
+    }
+  }, [clipboard, addObject]);
+
+  // --- Інші методи ---
+
+  const toggleEditMode = useCallback(() => setIsEditMode(prev => !prev), []);
+  
   const setTransformModeHandler = useCallback((mode: 'translate' | 'rotate' | 'scale') => {
     setTransformMode(mode);
   }, []);
 
-  // Змінює основний колір об'єкта
   const changeObjectColor = useCallback((id: string, color: number) => {
     const object = objects.find(obj => obj.id === id);
     if (object) {
       const mesh = object.mesh as THREE.Mesh;
       const material = mesh.material as THREE.MeshStandardMaterial;
-      if (material) {
-        material.color.setHex(color);
-      }
+      if (material) material.color.setHex(color);
     }
   }, [objects]);
 
-  // Оновлює об'єкт (назву, позицію, обертання тощо)
   const updateObject = useCallback((id: string, updates: {
     name?: string;
     position?: { x: number; y: number; z: number };
@@ -109,36 +137,31 @@ export function useSceneManager() {
   }) => {
     setObjects(prev => prev.map(obj => {
       if (obj.id === id) {
-        const updatedObj = { ...obj };
         const mesh = obj.mesh as THREE.Mesh;
-
-        // Оновлення назви
-        if (updates.name !== undefined) {
-          updatedObj.name = updates.name;
-          mesh.name = updates.name;
-        }
-
-        // Оновлення позиції
-        if (updates.position) {
-          mesh.position.set(updates.position.x, updates.position.y, updates.position.z);
-        }
-
-        // Оновлення обертання
-        if (updates.rotation) {
-          mesh.rotation.set(updates.rotation.x, updates.rotation.y, updates.rotation.z);
-        }
-
-        return updatedObj;
+        if (updates.name !== undefined) mesh.name = updates.name;
+        if (updates.position) mesh.position.set(updates.position.x, updates.position.y, updates.position.z);
+        if (updates.rotation) mesh.rotation.set(updates.rotation.x, updates.rotation.y, updates.rotation.z);
+        return { ...obj, name: updates.name ?? obj.name };
       }
       return obj;
     }));
   }, []);
 
-
+  const getTreeScene = useCallback(() => {
+    const traverseObject = (obj: THREE.Object3D): any => ({
+      id: obj.uuid,
+      name: obj.name || 'Unnamed Object',
+      type: obj.type,
+      shape: (obj as THREE.Mesh).geometry?.type || null,
+      children: obj.children.map(traverseObject),
+    });
+    return objects.map(obj => traverseObject(obj.mesh));
+  }, [objects]);
 
   return useMemo(() => ({
     objects,
     selectedObjectId,
+    clipboard,
     isEditMode,
     transformMode,
     addObject,
@@ -150,19 +173,13 @@ export function useSceneManager() {
     changeObjectColor,
     updateObject,
     getTreeScene,
+    duplicateObject,
+    copyToClipboard,
+    pasteFromClipboard
   }), [
-    objects,
-    selectedObjectId,
-    isEditMode,
-    transformMode,
-    addObject,
-    removeObject,
-    selectObject,
-    clearSelection,
-    toggleEditMode,
-    setTransformModeHandler,
-    changeObjectColor,
-    updateObject,
-    getTreeScene,
+    objects, selectedObjectId, clipboard, isEditMode, transformMode,
+    addObject, removeObject, selectObject, clearSelection, toggleEditMode,
+    setTransformModeHandler, changeObjectColor, updateObject, getTreeScene,
+    duplicateObject, copyToClipboard, pasteFromClipboard
   ]);
 }

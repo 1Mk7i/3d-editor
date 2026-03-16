@@ -41,6 +41,7 @@ import { useObjectUpdate } from './useObjectUpdate';
 import { useAgentCommands } from './useAgentCommands';
 
 const Editor: React.FC = () => {
+    // 1. Ініціалізація всіх хуків (мають бути на самому початку)
     const contextMenu = useContextMenu();
     const windowManager = useWindowManager();
     const sceneManager = useSceneManager();
@@ -65,6 +66,19 @@ const Editor: React.FC = () => {
     const { handleColorChange, handleUpdateObject, handleObjectSelect } = useObjectUpdate(sceneManager);
     const { handleAgentCommand } = useAgentCommands(sceneManager, handleUpdateObject);
 
+    // 2. Створення пунктів меню (useMemo має бути вище за будь-який return)
+    const menuItems = React.useMemo(() => createContextMenuItems(
+        windowManager.openWindow,
+        sceneManager,
+        !!sceneManager.clipboard,
+        {
+            copy: sceneManager.copyToClipboard,
+            paste: sceneManager.pasteFromClipboard,
+            duplicate: sceneManager.duplicateObject
+        }
+    ), [windowManager.openWindow, sceneManager]);
+
+    // 3. Ефекти
     React.useEffect(() => {
         setIsMounted(true);
         if (isMobile) {
@@ -74,9 +88,33 @@ const Editor: React.FC = () => {
 
     React.useEffect(() => {
         sceneTree.updateTree(sceneManager.getTreeScene());
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sceneManager.objects]);
+    }, [sceneManager.objects, sceneTree, sceneManager]);
 
+    // Гарячі клавіші для копіювання/вставки
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'c':
+                        if (sceneManager.selectedObjectId) sceneManager.copyToClipboard(sceneManager.selectedObjectId);
+                        break;
+                    case 'v':
+                        sceneManager.pasteFromClipboard();
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        if (sceneManager.selectedObjectId) sceneManager.duplicateObject(sceneManager.selectedObjectId);
+                        break;
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [sceneManager]);
+
+    // 4. Обробники подій
     const handleSettingsClick = React.useCallback(() => {
         windowManager.openWindow('settings', {
             isVisible: true,
@@ -118,6 +156,7 @@ const Editor: React.FC = () => {
         setObjectMenuAnchor(null);
     }, []);
 
+    // 5. Умовний рендер (ТІЛЬКИ ПІСЛЯ ВСІХ ХУКІВ)
     if (!isMounted) return null;
 
     return (
@@ -158,7 +197,6 @@ const Editor: React.FC = () => {
                         Інструкція
                     </Button>
 
-                    {/* File dropdown */}
                     <Menu
                         anchorEl={fileMenuAnchor}
                         open={Boolean(fileMenuAnchor)}
@@ -180,7 +218,7 @@ const Editor: React.FC = () => {
                     <Box sx={{ flexGrow: 1 }} />
 
                     {isMobile && isSupported && (
-                        <Tooltip title={isFullscreen ? 'Вийти з повноекранного режиму' : 'Увійти в повноекранний режим'}>
+                        <Tooltip title={isFullscreen ? 'Вийти' : 'Увійти в повний екран'}>
                             <IconButton onClick={toggleFullscreen} sx={{ color: 'text.primary', mr: 1 }}>
                                 {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
                             </IconButton>
@@ -219,32 +257,6 @@ const Editor: React.FC = () => {
                     />
                 </Box>
 
-                {/* Кнопка перемикання правої панелі (mobile) */}
-                {isMobile && (
-                    <IconButton
-                        onClick={() => setIsRightMenuVisible(v => !v)}
-                        title={isRightMenuVisible ? 'Приховати праву панель' : 'Показати праву панель'}
-                        sx={{
-                            position: 'absolute',
-                            right: isRightMenuVisible ? '40%' : 0,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            zIndex: 1001,
-                            bgcolor: 'background.paper',
-                            border: 1,
-                            borderColor: 'divider',
-                            borderRadius: isRightMenuVisible ? '4px 0 0 4px' : '0 4px 4px 0',
-                            width: 40,
-                            height: 80,
-                            boxShadow: 2,
-                            '&:hover': { bgcolor: 'action.hover' },
-                            transition: 'right 0.3s ease, border-radius 0.3s ease',
-                        }}
-                    >
-                        {isRightMenuVisible ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-                    </IconButton>
-                )}
-
                 <Box sx={{ width: isRightMenuVisible ? (isMobile ? '40%' : 300) : 0, overflow: 'hidden', transition: 'width 0.3s ease', flexShrink: 0 }}>
                     {isRightMenuVisible && (
                         <RightMenu
@@ -259,14 +271,15 @@ const Editor: React.FC = () => {
                 </Box>
             </Box>
 
-            {/* Dialogs & overlays */}
+            {/* Context Menu */}
             <ContextMenu
                 isVisible={contextMenu.isVisible}
                 position={contextMenu.position}
-                items={createContextMenuItems(windowManager.openWindow, sceneManager)}
+                items={menuItems}
                 onClose={contextMenu.hideContextMenu}
             />
 
+            {/* Dialogs */}
             <FileDialog
                 open={fileDialogOpen}
                 operation={fileOperation}
