@@ -25,24 +25,18 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
   const mouseDownPos = useRef(new THREE.Vector2());
   const gridHelperRef = useRef<THREE.GridHelper | null>(null);
 
-  // Застосовуємо налаштування фону сцени
   useEffect(() => {
     const color = new THREE.Color(settings.sceneBackgroundColor);
     scene.background = color;
   }, [settings.sceneBackgroundColor, scene]);
 
-  // Застосовуємо налаштування якості рендерингу
   useEffect(() => {
     const pixelRatio = settings.renderQuality === 'high' ? 2 : settings.renderQuality === 'medium' ? 1.5 : 1;
     gl.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio));
   }, [settings.renderQuality, gl]);
 
-  // Застосовуємо налаштування згладжування
   useEffect(() => {
-    // antialias is set during WebGLRenderer initialization and cannot be changed after
-    // This would need to be set when creating the renderer
     if (!settings.antialiasing && gl) {
-      // Disable post-processing blur by lowering sampling if needed
       gl.setPixelRatio(Math.min(window.devicePixelRatio, 1));
     }
   }, [settings.antialiasing, gl]);
@@ -61,7 +55,6 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
     };
 
     const handleClick = (event: MouseEvent) => {
-      // Ігноруємо клік якщо була drag операція
       if (isDragging.current) return;
 
       const rect = gl.domElement.getBoundingClientRect();
@@ -97,7 +90,6 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
     };
   }, [objects, selectObject, clearSelection, camera, gl]);
 
-  // Оновлюємо сітку при зміні налаштувань
   useEffect(() => {
     if (gridHelperRef.current) {
       scene.remove(gridHelperRef.current);
@@ -131,7 +123,6 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
         castShadow={settings.shadows}
       />
       {objects.map(obj => {
-        // Застосовуємо тіні до об'єктів
         if (obj.mesh instanceof THREE.Mesh) {
           obj.mesh.castShadow = settings.shadows;
           obj.mesh.receiveShadow = settings.shadows;
@@ -151,7 +142,6 @@ const SceneContent = ({ objects, selectObject, selectedObjectId, clearSelection,
 };
 
 const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, isEditMode, transformMode, settings }: ThreeSceneProps) => {
-  // Використовуємо key для форсування оновлення при зміні налаштувань
   const settingsKey = `${settings.sceneBackgroundColor}-${settings.gridVisible}-${settings.gridSize}-${settings.gridDivisions}-${settings.renderQuality}-${settings.shadows}-${settings.antialiasing}`;
   
   return (
@@ -160,6 +150,12 @@ const ThreeScene = ({ objects, selectObject, selectedObjectId, clearSelection, i
       style={{ width: '100%', height: '100%' }}
       shadows={settings.shadows}
       gl={{ antialias: settings.antialiasing }}
+      camera={{ 
+        position: [10, 10, 10],
+        fov: 55,
+        near: 0.1,
+        far: 1000
+      }}
     >
       <SceneContent 
         objects={objects}
