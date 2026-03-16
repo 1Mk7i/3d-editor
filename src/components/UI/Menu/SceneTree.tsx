@@ -52,14 +52,44 @@ const TreeNode: React.FC<{
 
   const getIcon = (shape: string | null | undefined, type: string | undefined) => {
     const shapeLower = (shape || type || '').toLowerCase();
-    if (shapeLower.includes('box')) return <BoxGeometryIcon fontSize="small" />;
-    if (shapeLower.includes('sphere')) return <CircleIcon fontSize="small" />;
-    if (shapeLower.includes('cylinder')) return <CylinderIcon fontSize="small" />;
-    if (shapeLower.includes('plane')) return <SquareIcon fontSize="small" />;
+    let fileName = 'help.svg';
+
+    if (shapeLower.includes('box')) fileName = 'box.svg';
+    if (shapeLower.includes('sphere')) fileName = 'sphere.svg';
+    if (shapeLower.includes('cylinder')) fileName = 'cylinder.svg';
+    if (shapeLower.includes('cone')) fileName = 'cone.svg';
+    if (shapeLower.includes('plane')) fileName = 'plane.svg';
+    if (shapeLower.includes('capsule')) fileName = 'capsule.svg';
+    if (shapeLower.includes('dodecahedron')) fileName = 'dodecahedron.svg';
+    if (shapeLower.includes('icosahedron')) fileName = 'icosahedron.svg';
+    if (shapeLower.includes('lathe')) fileName = 'lathe.svg';
+    if (shapeLower.includes('octahedron')) fileName = 'octahedron.svg';
+    if (shapeLower.includes('ring')) fileName = 'ring.svg';
+    if (shapeLower.includes('tetrahedron')) fileName = 'tetrahedron.svg';
+    if (shapeLower.includes('torus')) fileName = 'torus.svg';
+    if (shapeLower.includes('tube')) fileName = 'tube.svg';
+    if (shapeLower.includes('torusknot')) fileName = 'torusKnot.svg';
     if (shapeLower.includes('group')) return <FolderIcon fontSize="small" />;
     if (shapeLower.includes('light')) return <LightIcon fontSize="small" />;
     if (shapeLower.includes('camera')) return <CameraIcon fontSize="small" />;
-    return <HelpIcon fontSize="small" />;
+
+    return (
+      <Box
+        component="img"
+        src={`/assets/shapes/${fileName}`}
+        sx={{
+          width: 20,
+          height: 20,
+          display: 'block',
+          filter: (theme) => {
+            const baseFilter = theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : '';
+            // Додаємо невелику тінь того ж кольору, що й лінія, щоб вона здавалася товстішою
+            return `${baseFilter} drop-shadow(0.5px 0px 0px white) drop-shadow(-0.5px 0px 0px white)`;
+          },
+        }}
+        alt={shapeLower}
+      />
+    );
   };
 
   return (
