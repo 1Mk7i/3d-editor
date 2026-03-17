@@ -25,7 +25,7 @@ import {
     Category as CategoryIcon,
     Help as HelpIcon,
     Fullscreen as FullscreenIcon,
-    FullscreenExit as FullscreenExitIcon,
+    FullscreenExit,
     ChevronRight as ChevronRightIcon,
     ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
@@ -41,7 +41,6 @@ import { useObjectUpdate } from './useObjectUpdate';
 import { useAgentCommands } from './useAgentCommands';
 
 const Editor: React.FC = () => {
-    // 1. Ініціалізація всіх хуків (мають бути на самому початку)
     const contextMenu = useContextMenu();
     const windowManager = useWindowManager();
     const sceneManager = useSceneManager();
@@ -66,19 +65,25 @@ const Editor: React.FC = () => {
     const { handleColorChange, handleUpdateObject, handleObjectSelect } = useObjectUpdate(sceneManager);
     const { handleAgentCommand } = useAgentCommands(sceneManager, handleUpdateObject);
 
-    // 2. Створення пунктів меню (useMemo має бути вище за будь-який return)
+    // 2. Створення пунктів меню (Використовуємо ваші поля sceneManager)
     const menuItems = React.useMemo(() => createContextMenuItems(
         windowManager.openWindow,
         sceneManager,
-        !!sceneManager.clipboard,
+        !!sceneManager.clipboard, // Ваше оригінальне поле
+        sceneManager.clipboard?.type, // Додаткові параметри для конфігу
+        sceneManager.clipboard?.subType,
         {
             copy: sceneManager.copyToClipboard,
             paste: sceneManager.pasteFromClipboard,
             duplicate: sceneManager.duplicateObject
         }
-    ), [windowManager.openWindow, sceneManager]);
+    ), [
+        windowManager.openWindow, 
+        sceneManager.clipboard, // Важливо для оновлення меню
+        sceneManager.selectedObjectId, 
+        sceneManager
+    ]);
 
-    // 3. Ефекти
     React.useEffect(() => {
         setIsMounted(true);
         if (isMobile) {
@@ -86,11 +91,13 @@ const Editor: React.FC = () => {
         }
     }, [isMobile]);
 
+    // ВИПРАВЛЕНО: Приведення типу для уникнення помилки ObjectTreeNode
     React.useEffect(() => {
-        sceneTree.updateTree(sceneManager.getTreeScene());
+        const treeData = sceneManager.getTreeScene() as any;
+        sceneTree.updateTree(treeData);
     }, [sceneManager.objects, sceneTree, sceneManager]);
 
-    // Гарячі клавіші для копіювання/вставки
+    // Гарячі клавіші
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -101,7 +108,7 @@ const Editor: React.FC = () => {
                         if (sceneManager.selectedObjectId) sceneManager.copyToClipboard(sceneManager.selectedObjectId);
                         break;
                     case 'v':
-                        sceneManager.pasteFromClipboard();
+                        sceneManager.pasteFromClipboard(sceneManager.selectedObjectId || undefined);
                         break;
                     case 'd':
                         e.preventDefault();
@@ -114,127 +121,80 @@ const Editor: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [sceneManager]);
 
-    // 4. Обробники подій
     const handleSettingsClick = React.useCallback(() => {
         windowManager.openWindow('settings', {
             isVisible: true,
             position: isMobile ? { x: 0, y: 0 } : { x: 100, y: 100 },
-            size: isMobile
-                ? { width: window.innerWidth, height: window.innerHeight }
-                : { width: 600, height: 400 },
+            size: isMobile ? { width: window.innerWidth, height: window.innerHeight } : { width: 600, height: 400 },
         });
-        if (isMobile) windowManager.maximizeWindow('settings');
     }, [windowManager, isMobile]);
 
     const handleInstructionsClick = React.useCallback(() => {
         windowManager.openWindow('instructions', {
             isVisible: true,
             position: isMobile ? { x: 0, y: 0 } : { x: 150, y: 150 },
-            size: isMobile
-                ? { width: window.innerWidth, height: window.innerHeight }
-                : { width: 800, height: 600 },
+            size: isMobile ? { width: window.innerWidth, height: window.innerHeight } : { width: 800, height: 600 },
         });
-        if (isMobile) windowManager.maximizeWindow('instructions');
     }, [windowManager, isMobile]);
 
     const handleChatClick = React.useCallback(() => {
         windowManager.openWindow('chat', {
             isVisible: true,
             position: isMobile ? { x: 0, y: 0 } : { x: 150, y: 150 },
-            size: isMobile
-                ? { width: window.innerWidth, height: window.innerHeight }
-                : { width: 400, height: 600 },
+            size: isMobile ? { width: window.innerWidth, height: window.innerHeight } : { width: 400, height: 600 },
         });
-        if (isMobile) windowManager.maximizeWindow('chat');
     }, [windowManager, isMobile]);
 
-    const handleObjectMenuOpen = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
-        setObjectMenuAnchor(event.currentTarget);
-    }, []);
-
-    const handleObjectMenuClose = React.useCallback(() => {
-        setObjectMenuAnchor(null);
-    }, []);
-
-    // 5. Умовний рендер (ТІЛЬКИ ПІСЛЯ ВСІХ ХУКІВ)
     if (!isMounted) return null;
 
     return (
         <Box
-            component="div"
             sx={{
-                position: 'fixed',
-                top: 0, left: 0, right: 0, bottom: 0,
-                width: '100%', height: '100%',
-                display: 'flex', flexDirection: 'column',
-                bgcolor: 'background.default',
-                overflow: 'hidden',
-                ...(isMobile && { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' }),
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+                bgcolor: 'background.default', overflow: 'hidden',
+                ...(isMobile && { width: '100vw', height: '100vh' }),
             }}
-            className={isMobile ? 'mobile-fullscreen-container' : ''}
             onContextMenu={contextMenu.showContextMenu}
         >
-            {/* AppBar */}
             <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
                 <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ color: 'text.primary', mr: 2 }}>
-                        3D Editor
-                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'text.primary', mr: 2 }}>3D Editor</Typography>
 
-                    <Button color="inherit" startIcon={<FolderIcon />} onClick={handleFileMenuOpen} sx={{ color: 'text.primary', mr: 1 }}>
-                        Файл
-                    </Button>
-                    <Button color="inherit" startIcon={<CategoryIcon />} onClick={handleObjectMenuOpen} sx={{ color: 'text.primary', mr: 1 }}>
-                        Об'єкт
-                    </Button>
+                    <Button color="inherit" startIcon={<FolderIcon />} onClick={handleFileMenuOpen} sx={{ color: 'text.primary', mr: 1 }}>Файл</Button>
+                    <Button color="inherit" startIcon={<CategoryIcon />} onClick={(e) => setObjectMenuAnchor(e.currentTarget)} sx={{ color: 'text.primary', mr: 1 }}>Об'єкт</Button>
+                    
                     <ObjectSelectorMenu
                         anchorEl={objectMenuAnchor}
                         open={Boolean(objectMenuAnchor)}
-                        onClose={handleObjectMenuClose}
+                        onClose={() => setObjectMenuAnchor(null)}
                         onSelect={handleObjectSelect}
                     />
-                    <Button color="inherit" startIcon={<HelpIcon />} onClick={handleInstructionsClick} sx={{ color: 'text.primary', mr: 1 }}>
-                        Інструкція
-                    </Button>
+                    
+                    <Button color="inherit" startIcon={<HelpIcon />} onClick={handleInstructionsClick} sx={{ color: 'text.primary', mr: 1 }}>Інструкція</Button>
 
-                    <Menu
-                        anchorEl={fileMenuAnchor}
-                        open={Boolean(fileMenuAnchor)}
-                        onClose={handleFileMenuClose}
-                        PaperProps={{
-                            sx: {
-                                maxHeight: isMobile ? 'calc(100vh - 100px)' : 'calc(100vh - 200px)',
-                                width: 'auto',
-                                minWidth: 200,
-                            },
-                        }}
-                    >
+                    <Menu anchorEl={fileMenuAnchor} open={Boolean(fileMenuAnchor)} onClose={handleFileMenuClose}>
                         <MenuItem onClick={() => handleFileMenuClick('import')}>Імпорт моделі</MenuItem>
                         <MenuItem onClick={() => handleFileMenuClick('export')}>Експорт моделі</MenuItem>
-                        <MenuItem onClick={() => { handleSaveProject(); handleFileMenuClose(); }}>Зберегти</MenuItem>
-                        <MenuItem onClick={() => { setWorkshopDialogOpen(true); handleFileMenuClose(); }}>Майстерня</MenuItem>
+                        <MenuItem onClick={handleSaveProject}>Зберегти</MenuItem>
+                        <MenuItem onClick={() => setWorkshopDialogOpen(true)}>Майстерня</MenuItem>
                     </Menu>
 
                     <Box sx={{ flexGrow: 1 }} />
 
                     {isMobile && isSupported && (
-                        <Tooltip title={isFullscreen ? 'Вийти' : 'Увійти в повний екран'}>
+                        <Tooltip title={isFullscreen ? 'Вийти' : 'Повний екран'}>
                             <IconButton onClick={toggleFullscreen} sx={{ color: 'text.primary', mr: 1 }}>
-                                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                                {isFullscreen ? <FullscreenExit /> : <FullscreenIcon />}
                             </IconButton>
                         </Tooltip>
                     )}
-                    <Button color="inherit" startIcon={<SettingsIcon />} onClick={handleSettingsClick} sx={{ color: 'text.primary', mr: 1 }}>
-                        Налаштування
-                    </Button>
-                    <Button color="inherit" startIcon={<AIIcon />} onClick={handleChatClick} sx={{ color: 'text.primary' }}>
-                        AI
-                    </Button>
+                    <Button color="inherit" startIcon={<SettingsIcon />} onClick={handleSettingsClick} sx={{ color: 'text.primary', mr: 1 }}>Налаштування</Button>
+                    <Button color="inherit" startIcon={<AIIcon />} onClick={handleChatClick} sx={{ color: 'text.primary' }}>AI</Button>
                 </Toolbar>
             </AppBar>
 
-            {/* Main content */}
-            <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', minWidth: 0 }}>
+            <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 <LeftMenu
                     isEditMode={sceneManager.isEditMode}
                     selectedObjectId={sceneManager.selectedObjectId}
@@ -245,7 +205,7 @@ const Editor: React.FC = () => {
                     onColorChange={handleColorChange}
                 />
 
-                <Box sx={{ flex: 1, position: 'relative', minWidth: 0, overflow: 'hidden' }}>
+                <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                     <ThreeScene
                         objects={sceneManager.objects}
                         selectObject={sceneManager.selectObject}
@@ -257,21 +217,18 @@ const Editor: React.FC = () => {
                     />
                 </Box>
 
-                <Box sx={{ width: isRightMenuVisible ? (isMobile ? '40%' : 300) : 0, overflow: 'hidden', transition: 'width 0.3s ease', flexShrink: 0 }}>
-                    {isRightMenuVisible && (
-                        <RightMenu
-                            treeData={sceneTree.treeData}
-                            onUpdateTree={sceneTree.updateTree}
-                            selectedObjectId={sceneManager.selectedObjectId}
-                            objects={sceneManager.objects}
-                            onSelectObject={sceneManager.selectObject}
-                            onUpdateObject={handleUpdateObject}
-                        />
-                    )}
+                <Box sx={{ width: isRightMenuVisible ? (isMobile ? '40%' : 300) : 0, transition: 'width 0.3s' }}>
+                    <RightMenu
+                        treeData={sceneTree.treeData}
+                        onUpdateTree={sceneTree.updateTree}
+                        selectedObjectId={sceneManager.selectedObjectId}
+                        objects={sceneManager.objects}
+                        onSelectObject={sceneManager.selectObject}
+                        onUpdateObject={handleUpdateObject}
+                    />
                 </Box>
             </Box>
 
-            {/* Context Menu */}
             <ContextMenu
                 isVisible={contextMenu.isVisible}
                 position={contextMenu.position}
@@ -279,69 +236,21 @@ const Editor: React.FC = () => {
                 onClose={contextMenu.hideContextMenu}
             />
 
-            {/* Dialogs */}
-            <FileDialog
-                open={fileDialogOpen}
-                operation={fileOperation}
-                onClose={handleFileDialogClose}
-                onConfirm={handleFileConfirm}
-                objectsCount={sceneManager.objects.length}
-            />
+            <FileDialog open={fileDialogOpen} operation={fileOperation} onClose={handleFileDialogClose} onConfirm={handleFileConfirm} objectsCount={sceneManager.objects.length} />
+            <WorkshopDialog open={workshopDialogOpen} onClose={() => setWorkshopDialogOpen(false)} onLoadProject={handleLoadProject} />
+            <ObjectSelectorDialog open={objectSelectorDialogOpen} onClose={() => setObjectSelectorDialogOpen(false)} onSelect={handleObjectSelect} />
 
-            <WorkshopDialog
-                open={workshopDialogOpen}
-                onClose={() => setWorkshopDialogOpen(false)}
-                onLoadProject={handleLoadProject}
-            />
-
-            <ObjectSelectorDialog
-                open={objectSelectorDialogOpen}
-                onClose={() => setObjectSelectorDialogOpen(false)}
-                onSelect={handleObjectSelect}
-            />
-
-            {/* Floating windows */}
-            {windowManager.windows.map(win => {
-                const commonProps = {
-                    key: win.id,
-                    id: win.id,
-                    isVisible: win.isVisible,
-                    isMinimized: win.isMinimized,
-                    isMaximized: win.isMaximized,
-                    initialPosition: win.position,
-                    initialSize: win.size,
-                    resizable: true,
-                    draggable: true,
-                    zIndex: win.zIndex,
-                    onClose: () => windowManager.closeWindow(win.id),
-                    onMinimize: () => windowManager.minimizeWindow(win.id),
-                    onMaximize: () => windowManager.maximizeWindow(win.id),
-                    onRestore: () => windowManager.restoreWindow(win.id),
-                    onFocus: () => windowManager.focusWindow(win.id),
-                };
-
-                if (win.id === 'settings') return (
-                    <Window {...commonProps} title="Налаштування" minSize={{ width: 600, height: 400 }}>
-                        <Settings onClose={() => windowManager.closeWindow('settings')} />
-                    </Window>
-                );
-                if (win.id === 'chat') return (
-                    <Window {...commonProps} title="AI Chat" minSize={{ width: 300, height: 400 }}>
-                        <Chat
-                            onClose={() => windowManager.closeWindow('chat')}
-                            onAgentCommand={handleAgentCommand}
-                            selectedObjectId={sceneManager.selectedObjectId}
-                            objects={sceneManager.objects}
-                        />
-                    </Window>
-                );
-                if (win.id === 'instructions') return (
-                    <Window {...commonProps} title="Інструкція" minSize={{ width: 600, height: 400 }}>
-                        <Instructions onClose={() => windowManager.closeWindow('instructions')} />
-                    </Window>
-                );
-                return null;
-            })}
+            {windowManager.windows.map(win => (
+                <Window key={win.id} {...win} title={win.id === 'chat' ? 'AI Chat' : win.id === 'settings' ? 'Налаштування' : 'Інструкція'}
+                    onClose={() => windowManager.closeWindow(win.id)} onMinimize={() => windowManager.minimizeWindow(win.id)}
+                    onMaximize={() => windowManager.maximizeWindow(win.id)} onRestore={() => windowManager.restoreWindow(win.id)}
+                    onFocus={() => windowManager.focusWindow(win.id)}
+                >
+                    {win.id === 'settings' && <Settings onClose={() => windowManager.closeWindow('settings')} />}
+                    {win.id === 'chat' && <Chat onClose={() => windowManager.closeWindow('chat')} onAgentCommand={handleAgentCommand} selectedObjectId={sceneManager.selectedObjectId} objects={sceneManager.objects} />}
+                    {win.id === 'instructions' && <Instructions onClose={() => windowManager.closeWindow('instructions')} />}
+                </Window>
+            ))}
         </Box>
     );
 };
