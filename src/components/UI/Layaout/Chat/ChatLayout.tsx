@@ -108,7 +108,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     return `На сцені знаходиться ${objects.length} об'єкт(ів):\n${sceneObjects.join('\n')}\n\nВибраний об'єкт: ${selectedObj ? `${selectedObj.name} (ID: "${selectedObj.id}")` : 'немає'}\n\nВАЖЛИВО: Для команд delete, update, select використовуйте поле "objectId" з ID об'єкта з наведеного списку, а не назву!`;
   }, [objects, selectedObjectId]);
 
-  // Генеруємо промпт з поточною інформацією про сцену (оновлюється при зміні об'єктів)
   const agentPrompt = React.useMemo(() => {
     return chatMode === 'agent' ? generateAgentPrompt(getSceneInfo()) : undefined;
   }, [chatMode, getSceneInfo]);
@@ -122,14 +121,12 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     retryConnection,
   } = useChat(agentPrompt, userApiKey);
 
-  // Автоматичне прокручування до останнього повідомлення
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatState.messages, chatState.isLoading]);
 
-  // Спроба підключення при зміні ключа
   useEffect(() => {
     if (userApiKey) {
       retryConnection(userApiKey);
@@ -138,12 +135,10 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
 
   const handleAgentResponse = useCallback((responseText: string) => {
     if (chatMode === 'agent') {
-      // Перевіряємо, чи це команда (JSON) чи інформаційна відповідь (текст)
       const trimmedResponse = responseText.trim();
       const isJsonResponse = trimmedResponse.startsWith('{') || trimmedResponse.startsWith('[');
       
       if (isJsonResponse && onAgentCommand) {
-        // Це команда - спробуємо розпарсити
         const isPossiblyTruncated = !trimmedResponse.endsWith(']') && 
                                      !trimmedResponse.endsWith('}') && 
                                      trimmedResponse.includes('"action"');
@@ -156,9 +151,7 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
         const commands = parseAgentCommand(responseText);
         if (commands && commands.length > 0) {
           console.log(`Parsed ${commands.length} commands from agent response`);
-          // Виконуємо всі команди послідовно
           commands.forEach((command, index) => {
-            // Невелика затримка між командами для коректної обробки
             setTimeout(() => {
               onAgentCommand(command);
             }, index * 50);
@@ -168,8 +161,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
           console.warn('Response text:', responseText);
         }
       } else {
-        // Це інформаційна відповідь - просто відображаємо її в чаті
-        // Відповідь вже додана в чат через handleSendMessage
         console.log('Agent provided informational response:', responseText);
       }
     }
@@ -195,7 +186,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
       }, 2000);
     } catch (error) {
       console.error('Помилка при копіюванні:', error);
-      // Fallback для старих браузерів
       const textArea = document.createElement('textarea');
       textArea.value = text;
       textArea.style.position = 'fixed';
@@ -226,7 +216,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
     return defaultModel?.label || chatState.selectedModel;
   };
 
-  // Використовуємо доступні моделі з API або fallback до констант
   const modelsToShow = availableModels.length > 0 
     ? availableModels.map(m => ({ value: m.name, label: m.displayName, description: m.description }))
     : GEMINI_MODELS;

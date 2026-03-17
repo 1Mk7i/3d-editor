@@ -65,12 +65,11 @@ const Editor: React.FC = () => {
     const { handleColorChange, handleUpdateObject, handleObjectSelect } = useObjectUpdate(sceneManager);
     const { handleAgentCommand } = useAgentCommands(sceneManager, handleUpdateObject);
 
-    // 2. Створення пунктів меню (Використовуємо ваші поля sceneManager)
     const menuItems = React.useMemo(() => createContextMenuItems(
         windowManager.openWindow,
         sceneManager,
-        !!sceneManager.clipboard, // Ваше оригінальне поле
-        sceneManager.clipboard?.type, // Додаткові параметри для конфігу
+        !!sceneManager.clipboard,
+        sceneManager.clipboard?.type,
         sceneManager.clipboard?.subType,
         {
             copy: sceneManager.copyToClipboard,
@@ -79,7 +78,7 @@ const Editor: React.FC = () => {
         }
     ), [
         windowManager.openWindow, 
-        sceneManager.clipboard, // Важливо для оновлення меню
+        sceneManager.clipboard,
         sceneManager.selectedObjectId, 
         sceneManager
     ]);
@@ -91,13 +90,11 @@ const Editor: React.FC = () => {
         }
     }, [isMobile]);
 
-    // ВИПРАВЛЕНО: Приведення типу для уникнення помилки ObjectTreeNode
     React.useEffect(() => {
         const treeData = sceneManager.getTreeScene() as any;
         sceneTree.updateTree(treeData);
     }, [sceneManager.objects, sceneTree, sceneManager]);
 
-    // Гарячі клавіші
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;

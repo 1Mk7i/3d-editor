@@ -291,7 +291,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           {activeTab === 3 && (
             <Stack spacing={3}>
               <FormControl fullWidth>
-                <InputLabel>Колір фону сцени</InputLabel>
+                <InputLabel>Фон</InputLabel>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
                   <TextField
                     type="color"
