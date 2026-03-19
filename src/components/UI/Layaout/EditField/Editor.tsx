@@ -138,7 +138,7 @@ const Editor: React.FC = () => {
         windowManager.openWindow('chat', {
             isVisible: true,
             position: isMobile ? { x: 0, y: 0 } : { x: 150, y: 150 },
-            size: isMobile ? { width: window.innerWidth, height: window.innerHeight } : { width: 400, height: 600 },
+            size: isMobile ? { width: window.innerWidth, height: window.innerHeight } : { width: 800, height: 600 },
         });
     }, [windowManager, isMobile]);
 

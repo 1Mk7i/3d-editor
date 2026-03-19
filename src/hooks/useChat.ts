@@ -1,37 +1,30 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { 
-  ChatMessage, 
-  ChatState, 
-  GeminiModelInfo 
-} from '@/shared/types/chat.types';
-import { 
-  ConnectionStatus, 
-  CONNECTION_STATUS, 
+import { useState, useCallback, useEffect, useRef } from "react";
+import {
+  ChatMessage,
+  ChatState,
+  GeminiModelInfo,
+} from "@/shared/types/chat.types";
+import {
+  CONNECTION_STATUS,
   DEFAULT_GEMINI_MODEL,
-  GeminiModel 
-} from '@/shared/constants/gemini.constants';
-import { 
-  fetchGeminiModels, 
-  generateContent, 
-  checkApiConnection 
-} from '@/shared/services/gemini.service';
-import { logger } from '@/shared/utils/logger';
+  GeminiModel,
+} from "@/shared/constants/gemini.constants";
+import {
+  fetchGeminiModels,
+  generateContent,
+} from "@/shared/services/gemini.service";
+import {
+  logger,
+  logError,
+  getFriendlyErrorMessage,
+} from "@/shared/utils/logger";
 
-export interface UseChatReturn {
-  chatState: ChatState;
-  availableModels: GeminiModelInfo[];
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSendMessage: (onAgentResponse?: (text: string) => void, userApiKey?: string) => Promise<void>;
-  handleModelChange: (model: GeminiModel) => void;
-  retryConnection: (userApiKey?: string) => Promise<void>;
-}
-
-export const useChat = (systemInstruction?: string, userApiKey?: string): UseChatReturn => {
+export const useChat = (systemInstruction?: string, userApiKey?: string) => {
   const [chatState, setChatState] = useState<ChatState>({
     messages: [],
-    inputText: '',
+    inputText: "",
     selectedModel: DEFAULT_GEMINI_MODEL,
     connectionStatus: CONNECTION_STATUS.IDLE,
     isLoading: false,
@@ -40,211 +33,183 @@ export const useChat = (systemInstruction?: string, userApiKey?: string): UseCha
 
   const [availableModels, setAvailableModels] = useState<GeminiModelInfo[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const systemInstructionRef = useRef<string | undefined>(systemInstruction);
+  const systemInstructionRef = useRef(systemInstruction);
+  
+  const isInitializing = useRef(false);
+  const hasLoadedModels = useRef(false);
 
-  // Оновлюємо ref при зміні systemInstruction
   useEffect(() => {
     systemInstructionRef.current = systemInstruction;
   }, [systemInstruction]);
 
-  // Перевірка підключення та завантаження моделей при ініціалізації
   useEffect(() => {
-    const initializeChat = async () => {
-      setChatState(prev => ({ ...prev, connectionStatus: CONNECTION_STATUS.CONNECTING }));
-      
-      try {
-        // Перевіряємо підключення
-        const isConnected = await checkApiConnection(userApiKey);
-        
-        if (!isConnected) {
-          setChatState(prev => ({ 
-            ...prev, 
-            connectionStatus: CONNECTION_STATUS.ERROR,
-            error: 'Не вдалося підключитися до API'
-          }));
-          return;
-        }
-
-        // Завантажуємо список моделей
-        const models = await fetchGeminiModels(userApiKey);
-        setAvailableModels(models);
-        
-        setChatState(prev => ({ 
-          ...prev, 
-          connectionStatus: CONNECTION_STATUS.CONNECTED,
-          error: null 
-        }));
-      } catch (error) {
-        logger.error('Помилка ініціалізації чату:', error);
-        setChatState(prev => ({ 
-          ...prev, 
-          connectionStatus: CONNECTION_STATUS.ERROR,
-          error: error instanceof Error ? error.message : 'Невідома помилка'
+    if (availableModels.length > 0) {
+      const current = chatState.selectedModel;
+      const isValid = availableModels.some((m) => m.name === current);
+      if (!isValid || current === DEFAULT_GEMINI_MODEL) {
+        setChatState((prev) => ({
+          ...prev,
+          selectedModel: availableModels[0].name as GeminiModel,
         }));
       }
-    };
-
-    // Виконуємо тільки якщо є ключ (серверний чи користувацький)
-    if (userApiKey || process.env.NODE_ENV === 'development') {
-      initializeChat();
     }
-  }, [userApiKey]);
+  }, [availableModels.length]);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setChatState(prev => ({ ...prev, inputText: e.target.value }));
-  }, []);
-
-  const handleSendMessage = useCallback(async (onAgentResponse?: (text: string) => void, userApiKey?: string) => {
-    if (chatState.inputText.trim() === '' || chatState.isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now(),
-      text: chatState.inputText,
-      sender: 'user',
-      timestamp: Date.now(),
-    };
-
-    // Додаємо повідомлення користувача
-    setChatState(prev => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      inputText: '',
-      isLoading: true,
-      error: null,
-    }));
-
-    // Скасовуємо попередній запит, якщо він є
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    abortControllerRef.current = new AbortController();
-
-    try {
-      // Формуємо історію повідомлень для контексту
-      const history: Array<{ role: 'user' | 'bot'; text: string }> = chatState.messages
-        .filter(msg => !msg.error) // Виключаємо повідомлення з помилками
-        .map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'bot',
-          text: msg.text,
+  const initializeChat = useCallback(
+    async (apiKey?: string) => {
+      if (!apiKey?.trim()) {
+        setChatState((prev) => ({
+          ...prev,
+          connectionStatus: CONNECTION_STATUS.IDLE,
+          messages: prev.messages.length === 0 ? [{
+            id: 'welcome',
+            text: '👋 Вітаю! Будь ласка, введіть свій Gemini API Key у полі вище, щоб почати роботу з 3D сценою.',
+            sender: 'bot',
+            timestamp: Date.now()
+          }] : prev.messages
         }));
-
-      const response = await generateContent(
-        userMessage.text,
-        chatState.selectedModel,
-        history,
-        systemInstructionRef.current,
-        userApiKey
-      );
-
-      const botMessage: ChatMessage = {
-        id: Date.now() + 1,
-        text: response.text,
-        sender: 'bot',
-        timestamp: Date.now(),
-      };
-
-      setChatState(prev => ({
-        ...prev,
-        messages: [...prev.messages, botMessage],
-        isLoading: false,
-        connectionStatus: CONNECTION_STATUS.CONNECTED,
-      }));
-
-      // Викликаємо callback для обробки відповіді агента
-      if (onAgentResponse && systemInstructionRef.current) {
-        onAgentResponse(response.text);
-      }
-    } catch (error) {
-      logger.error('Помилка при відправці повідомлення:', error);
-
-      // Формуємо зрозуміле повідомлення про помилку
-      let userFriendlyMessage = 'Помилка при отриманні відповіді';
-      
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        
-        // Перевіряємо, чи це помилка про перевищення квоти
-        if (errorMessage.includes('429') || 
-            errorMessage.includes('квоти') || 
-            errorMessage.includes('quota') ||
-            errorMessage.includes('RESOURCE_EXHAUSTED')) {
-          userFriendlyMessage = errorMessage.includes('квоти') 
-            ? errorMessage 
-            : 'Перевищено денну квоту API Gemini. Спробуйте пізніше або оновіть тарифний план.';
-        } else if (errorMessage.includes('API ключ')) {
-          userFriendlyMessage = 'Проблема з API ключем. Перевірте налаштування.';
-        } else if (errorMessage.includes('підключення') || errorMessage.includes('connection')) {
-          userFriendlyMessage = 'Помилка підключення до API. Перевірте інтернет-з\'єднання.';
-        } else {
-          userFriendlyMessage = errorMessage;
-        }
-      }
-
-      const errorMessage: ChatMessage = {
-        id: Date.now() + 1,
-        text: userFriendlyMessage,
-        sender: 'bot',
-        timestamp: Date.now(),
-        error: true,
-      };
-
-      setChatState(prev => ({
-        ...prev,
-        messages: [...prev.messages, errorMessage],
-        isLoading: false,
-        connectionStatus: CONNECTION_STATUS.ERROR,
-        error: userFriendlyMessage,
-      }));
-    } finally {
-      abortControllerRef.current = null;
-    }
-  }, [chatState.inputText, chatState.messages, chatState.selectedModel, chatState.isLoading]);
-
-  const handleModelChange = useCallback((model: GeminiModel) => {
-    setChatState(prev => ({ ...prev, selectedModel: model }));
-  }, []);
-
-  const retryConnection = useCallback(async (userApiKey?: string) => {
-    setChatState(prev => ({ ...prev, connectionStatus: CONNECTION_STATUS.CONNECTING }));
-    
-    try {
-      const isConnected = await checkApiConnection();
-      
-      if (!isConnected) {
-        setChatState(prev => ({ 
-          ...prev, 
-          connectionStatus: CONNECTION_STATUS.ERROR,
-          error: 'Не вдалося підключитися до API'
-        }));
+        hasLoadedModels.current = false;
         return;
       }
 
-      const models = await fetchGeminiModels(userApiKey);
-      setAvailableModels(models);
-      
-      setChatState(prev => ({ 
-        ...prev, 
-        connectionStatus: CONNECTION_STATUS.CONNECTED,
-        error: null 
+      if (isInitializing.current || hasLoadedModels.current) return;
+
+      isInitializing.current = true;
+      setChatState((prev) => ({
+        ...prev,
+        connectionStatus: CONNECTION_STATUS.CONNECTING,
+        error: null,
       }));
-    } catch (error) {
-      logger.error('Помилка повторного підключення:', error);
-      setChatState(prev => ({ 
-        ...prev, 
-        connectionStatus: CONNECTION_STATUS.ERROR,
-        error: error instanceof Error ? error.message : 'Невідома помилка'
+
+      try {
+        const models = await fetchGeminiModels(apiKey);
+        setAvailableModels(models);
+        setChatState((prev) => ({
+          ...prev,
+          connectionStatus: CONNECTION_STATUS.CONNECTED,
+        }));
+        hasLoadedModels.current = true;
+        logger.info("Chat initialized successfully");
+      } catch (error: any) {
+        hasLoadedModels.current = false;
+        const msg = getFriendlyErrorMessage(error);
+        logError("InitializeChat", error);
+        setChatState((prev) => ({
+          ...prev,
+          connectionStatus: CONNECTION_STATUS.ERROR,
+          error: msg,
+        }));
+      } finally {
+        isInitializing.current = false;
+      }
+    },
+    [availableModels.length]
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (userApiKey && userApiKey.length > 10) {
+        initializeChat(userApiKey);
+      } else if (!userApiKey) {
+        initializeChat("");
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [userApiKey, initializeChat]);
+
+  const handleSendMessage = useCallback(
+    async (onAgentResponse?: (text: string) => void, apiKey?: string) => {
+      if (!chatState.inputText.trim() || chatState.isLoading || !apiKey) return;
+
+      const userText = chatState.inputText;
+      const userMessage: ChatMessage = {
+        id: Date.now(),
+        text: userText,
+        sender: "user",
+        timestamp: Date.now(),
+      };
+
+      setChatState((prev) => ({
+        ...prev,
+        messages: [...prev.messages, userMessage],
+        inputText: "",
+        isLoading: true,
+        error: null,
       }));
-    }
-  }, []);
+
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      abortControllerRef.current = new AbortController();
+
+      try {
+        const history = chatState.messages
+          .filter((msg) => !msg.error && msg.id !== "welcome")
+          .map((msg) => ({
+            role: (msg.sender === "user" ? "user" : "bot") as "user" | "bot",
+            text: msg.text,
+          }));
+
+        const response = await generateContent(
+          userText,
+          chatState.selectedModel,
+          history,
+          systemInstructionRef.current,
+          apiKey,
+        );
+        
+        const botMessage: ChatMessage = {
+          id: Date.now() + 1,
+          text: response.text,
+          sender: "bot",
+          timestamp: Date.now(),
+        };
+
+        setChatState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, botMessage],
+          isLoading: false,
+        }));
+        
+        if (onAgentResponse) onAgentResponse(response.text);
+      } catch (error: any) {
+        if (error.name === "AbortError") return;
+        const friendlyMsg = getFriendlyErrorMessage(error);
+        setChatState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: friendlyMsg,
+          messages: [
+            ...prev.messages,
+            {
+              id: Date.now() + 1,
+              text: friendlyMsg,
+              sender: "bot",
+              timestamp: Date.now(),
+              error: true,
+            },
+          ],
+        }));
+      }
+    },
+    [
+      chatState.inputText,
+      chatState.messages,
+      chatState.selectedModel,
+      chatState.isLoading,
+    ],
+  );
 
   return {
     chatState,
     availableModels,
-    handleInputChange,
     handleSendMessage,
-    handleModelChange,
-    retryConnection,
+    handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      setChatState((prev) => ({ ...prev, inputText: e.target.value })),
+    handleModelChange: (model: GeminiModel) =>
+      setChatState((prev) => ({ ...prev, selectedModel: model })),
+    retryConnection: (apiKey?: string) => {
+      hasLoadedModels.current = false;
+      initializeChat(apiKey);
+    },
   };
 };
-

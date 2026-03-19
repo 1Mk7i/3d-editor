@@ -1,81 +1,49 @@
-/**
- * Утиліта для логування з підтримкою різних рівнів та умовного виводу
- */
-
 const isDev = process.env.NODE_ENV === 'development';
 
+/**
+ * Словник для перекладу технічних помилок у зрозумілі користувачу
+ */
+export const getFriendlyErrorMessage = (error: any): string => {
+  const message = error?.message || String(error);
+  
+  if (message.includes('429') || message.includes('quota') || message.includes('RESOURCE_EXHAUSTED')) {
+    return 'Перевищено ліміт запитів Gemini. Спробуйте через хвилину або перевірте квоту.';
+  }
+  if (message.includes('API ключ') || message.includes('401') || message.includes('invalid key')) {
+    return 'Проблема з API ключем. Перевірте правильність ключа у налаштуваннях.';
+  }
+  if (message.includes('network') || message.includes('fetch') || message.includes('Failed to fetch')) {
+    return 'Помилка мережі. Перевірте з’єднання з інтернетом.';
+  }
+  if (message.includes('model not found') || message.includes('404')) {
+    return 'Обрана модель тимчасово недоступна. Спробуйте іншу.';
+  }
+
+  return message || 'Сталася невідома помилка. Спробуйте ще раз.';
+};
+
 export const logger = {
-  /**
-   * Логування для розробки (показується тільки в dev режимі)
-   */
-  log: (...args: any[]) => {
-    if (isDev) {
-      console.log('[DEV]', ...args);
-    }
-  },
-
-  /**
-   * Попередження (показується тільки в dev режимі)
-   */
-  warn: (...args: any[]) => {
-    if (isDev) {
-      console.warn('[DEV WARN]', ...args);
-    }
-  },
-
-  /**
-   * Помилки (показуються завжди)
-   */
-  error: (...args: any[]) => {
-    console.error('[ERROR]', ...args);
-  },
-
-  /**
-   * Інформаційні повідомлення (показуються тільки в dev режимі)
-   */
-  info: (...args: any[]) => {
-    if (isDev) {
-      console.info('[DEV INFO]', ...args);
-    }
-  },
-
-  /**
-   * Debug повідомлення з контекстом (показуються тільки в dev режимі)
-   */
+  log: (...args: any[]) => isDev && console.log('%c[DEV]', 'color: #2196F3; font-weight: bold;', ...args),
+  warn: (...args: any[]) => isDev && console.warn('%c[WARN]', 'color: #FF9800; font-weight: bold;', ...args),
+  info: (...args: any[]) => isDev && console.info('%c[INFO]', 'color: #4CAF50; font-weight: bold;', ...args),
+  error: (...args: any[]) => console.error('%c[ERROR]', 'color: #F44336; font-weight: bold;', ...args),
+  
   debug: (context: string, ...args: any[]) => {
-    if (isDev) {
-      console.log(`[DEBUG ${context}]`, ...args);
-    }
+    if (isDev) console.log(`%c[DEBUG ${context}]`, 'color: #9C27B0; font-weight: bold;', ...args);
   },
 
-  /**
-   * Групування логів для кращої читабельності
-   */
   group: (label: string, callback: () => void) => {
     if (isDev) {
-      console.group(`[DEV GROUP] ${label}`);
+      console.group(`%c[GROUP] ${label}`, 'color: #795548; font-weight: bold;');
       callback();
       console.groupEnd();
     }
   },
 };
 
-/**
- * Хелпер для логування об'єктів з форматуванням
- */
-export const logObject = (label: string, obj: any) => {
-  logger.group(label, () => {
-    logger.log(JSON.stringify(obj, null, 2));
-  });
-};
-
-/**
- * Хелпер для логування помилок з контекстом
- */
 export const logError = (context: string, error: unknown) => {
   logger.error(`Error in ${context}:`, error);
-  
-  if (error instanceof Error) {
-    logger.error('Stack trace:', error.stack);
+  if (error instanceof Error && isDev && error.stack) {
+    logger.debug(`${context}_STACK`, error.stack);
   }
 };
