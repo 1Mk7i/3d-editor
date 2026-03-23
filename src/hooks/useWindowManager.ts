@@ -29,34 +29,38 @@ let nextZIndex = 1000;
 export const useWindowManager = (): UseWindowManagerReturn => {
   const [windows, setWindows] = useState<WindowState[]>([]);
 
-  const openWindow = useCallback((id: string, initialProps?: Partial<WindowState>) => {
-    setWindows(prev => {
-      const existingWindow = prev.find(w => w.id === id);
-      
-      if (existingWindow) {
-        // Якщо вікно вже існує, просто фокусуємо його
-        return prev.map(w => 
-          w.id === id 
-            ? { ...w, isVisible: true, isMinimized: false, zIndex: ++nextZIndex }
-            : w
-        );
-      }
+const openWindow = useCallback((id: string, initialProps?: Partial<WindowState>) => {
+  setWindows(prev => {
+    const existingWindow = prev.find(w => w.id === id);
+    
+    if (existingWindow) {
+      return prev.map(w => 
+        w.id === id 
+          ? { 
+              ...w, 
+              ...initialProps,
+              isVisible: true, 
+              isMinimized: false, 
+              zIndex: ++nextZIndex 
+            }
+          : w
+      );
+    }
 
-      // Створюємо нове вікно
-      const defaultWindow: WindowState = {
-        id,
-        isVisible: true,
-        isMinimized: false,
-        isMaximized: false,
-        position: { x: 100 + (prev.length * 30), y: 100 + (prev.length * 30) },
-        size: { width: 600, height: 400 },
-        zIndex: ++nextZIndex,
-        ...initialProps,
-      };
+    const defaultWindow: WindowState = {
+      id,
+      isVisible: true,
+      isMinimized: false,
+      isMaximized: false,
+      position: { x: 100 + (prev.length * 30), y: 100 + (prev.length * 30) },
+      size: { width: 600, height: 400 },
+      zIndex: ++nextZIndex,
+      ...initialProps,
+    };
 
-      return [...prev, defaultWindow];
-    });
-  }, []);
+    return [...prev, defaultWindow];
+  });
+}, []);
 
   const closeWindow = useCallback((id: string) => {
     setWindows(prev => prev.filter(w => w.id !== id));

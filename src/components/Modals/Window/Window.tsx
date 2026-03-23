@@ -13,7 +13,7 @@ export const Window: React.FC<WindowProps> = ({
   isMinimized = false,
   isMaximized = false,
   initialPosition = { x: 100, y: 100 },
-  initialSize = { width: 600, height: 400 },
+  initialSize = { width: 600, height: 600 },
   minSize = { width: 300, height: 200 },
   maxSize,
   resizable = true,
@@ -46,12 +46,10 @@ export const Window: React.FC<WindowProps> = ({
 
   useEffect(() => {
     if (isMaximized && !wasMaximized) {
-      // Зберігаємо поточний розмір та позицію перед максимізацією
       setSavedSize(size);
       setSavedPosition(position);
       setPosition({ x: 0, y: 0 });
       
-      // Якщо є обмеження maxSize, використовуємо його, інакше розгортаємо на весь екран
       if (maxSize) {
         setSize(maxSize);
       } else {
@@ -59,14 +57,12 @@ export const Window: React.FC<WindowProps> = ({
       }
       setWasMaximized(true);
     } else if (!isMaximized && wasMaximized) {
-      // Повертаємо збережені розміри після максимізації
       setSize(savedSize);
       setPosition(savedPosition);
       setWasMaximized(false);
     }
   }, [isMaximized, size, position, savedSize, savedPosition, maxSize]);
 
-  // На мобільних пристроях автоматично максимізуємо вікно при відкритті
   useEffect(() => {
     if (isMobile && isVisible && !isMaximized && !wasMaximized) {
       setSavedSize(size);
@@ -80,7 +76,6 @@ export const Window: React.FC<WindowProps> = ({
     }
   }, [isMobile, isVisible, isMaximized, wasMaximized, size, position, onMaximize]);
 
-  // Встановлюємо maxSize після монтування компонента
   const [maxSizeState, setMaxSizeState] = useState({ width: 1200, height: 800 });
   
   useEffect(() => {
@@ -94,7 +89,6 @@ export const Window: React.FC<WindowProps> = ({
 
   const actualMaxSize = maxSize || maxSizeState;
 
-  // Функція закриття з анімацією
   const handleClose = useCallback(() => {
     if (confirmClose) {
       if (window.confirm(closeConfirmMessage)) {
@@ -111,7 +105,6 @@ export const Window: React.FC<WindowProps> = ({
     }
   }, [confirmClose, closeConfirmMessage, onClose]);
 
-  // Обробник клавіш (Escape для закриття)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isVisible && !isMinimized) {
@@ -133,7 +126,6 @@ export const Window: React.FC<WindowProps> = ({
         const newX = e.clientX - dragOffset.x;
         const newY = e.clientY - dragOffset.y;
         
-        // Обмежуємо переміщення в межах екрану
         const maxX = window.innerWidth - size.width;
         const maxY = window.innerHeight - size.height;
         
@@ -207,13 +199,11 @@ export const Window: React.FC<WindowProps> = ({
   };
 
   const handleTitleBarDoubleClick = () => {
-    // Ігноруємо подвійний клік, якщо була натиснута кнопка
     if (isButtonClicked) {
       setIsButtonClicked(false);
       return;
     }
     
-    // Подвійний клік на заголовку - максимізувати/відновити
     if (onMaximize && onRestore) {
       if (isMaximized) {
         onRestore?.();
@@ -223,7 +213,6 @@ export const Window: React.FC<WindowProps> = ({
     }
   };
 
-  // Скидаємо флаг кнопки через деякий час
   useEffect(() => {
     if (isButtonClicked) {
       const timeout = setTimeout(() => {
@@ -257,7 +246,7 @@ export const Window: React.FC<WindowProps> = ({
   if (!isVisible) return null;
 
   if (isMinimized) {
-    return null; // Мінімізовані вікна не відображаються
+    return null;
   }
 
   return (
