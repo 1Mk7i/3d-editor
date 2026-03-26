@@ -1,23 +1,9 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import ThreeScene from '@/components/UI/Scene/ThreeScene';
-import { ContextMenu } from '@/components/ContextMenu/ContextMenu';
-import { useContextMenu } from '@/hooks/useContextMenu';
-import { useWindowManager } from '@/hooks/useWindowManager';
-import { useSceneManager } from '@/hooks/useSceneManager';
-import { createContextMenuItems } from '@/config/contextMenuConfig';
-import { WINDOW_CONFIG, UI_DIMENSIONS, COLORS } from '@/config/editorConfig';
-import useSceneTree from '@/hooks/useSceneTree';
-import { Window } from '@/components/Modals/Window/Window';
-import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
-import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
-import { Instructions } from '@/components/UI/Layaout/Instructions/InstructionsLayout';
-import { LeftMenu } from '../LeftMenu';
-import { RightMenu } from '../RightMenu';
-import {
-    Box, AppBar, Toolbar, Typography, Button,
-    Menu, MenuItem, IconButton, Tooltip,
+import { 
+    Box, AppBar, Toolbar, Typography, Button, 
+    Menu, MenuItem, IconButton, Tooltip, useTheme 
 } from '@mui/material';
 import {
     Settings as SettingsIcon,
@@ -28,33 +14,53 @@ import {
     Fullscreen as FullscreenIcon,
     FullscreenExit,
 } from '@mui/icons-material';
-import { useSettings } from '@/hooks/useSettings';
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { useFullscreen } from '@/hooks/useFullscreen';
+
+// Components
+import ThreeScene from '@/components/UI/Scene/ThreeScene';
+import { ContextMenu } from '@/components/ContextMenu/ContextMenu';
+import { Window } from '@/components/Modals/Window/Window';
+import { Settings } from '@/components/UI/Layaout/Settings/SettingsLayout';
+import { Chat } from '@/components/UI/Layaout/Chat/ChatLayout';
+import { Instructions } from '@/components/UI/Layaout/Instructions/InstructionsLayout';
+import { LeftMenu } from '../LeftMenu';
+import { RightMenu } from '../RightMenu';
 import { FileDialog } from '../FileMenu/FileDialog';
 import { WorkshopDialog } from '../FileMenu/WorkshopDialog';
 import { ObjectSelectorMenu } from '../ObjectSelector/ObjectSelectorMenu';
 import { ObjectSelectorDialog } from '../ObjectSelector/ObjectSelectorDialog';
+
+// Hooks & Config
+import { useContextMenu } from '@/hooks/useContextMenu';
+import { useWindowManager } from '@/hooks/useWindowManager';
+import { useSceneManager } from '@/hooks/useSceneManager';
+import { useSettings } from '@/hooks/useSettings';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import useSceneTree from '@/hooks/useSceneTree';
 import { useFileOperations } from './useFileOperations';
 import { useObjectUpdate } from './useObjectUpdate';
 import { useAgentCommands } from './useAgentCommands';
+import { createContextMenuItems } from '@/config/contextMenuConfig';
+import { WINDOW_CONFIG, UI_DIMENSIONS } from '@/config/editorConfig';
 
 const Editor: React.FC = () => {
-    // Hooks
+    const theme = useTheme();
+    const isMobile = useIsMobile();
+    const { settings } = useSettings();
+    const { isFullscreen, isSupported, toggleFullscreen } = useFullscreen();
+
+    // Managers & Hooks
     const contextMenu = useContextMenu();
     const windowManager = useWindowManager();
     const sceneManager = useSceneManager();
     const sceneTree = useSceneTree();
-    const { settings } = useSettings();
-    const isMobile = useIsMobile();
-    const { isFullscreen, isSupported, toggleFullscreen } = useFullscreen();
 
     // Local State
     const [isMounted, setIsMounted] = useState(false);
     const [objectMenuAnchor, setObjectMenuAnchor] = useState<null | HTMLElement>(null);
     const [objectSelectorDialogOpen, setObjectSelectorDialogOpen] = useState(false);
 
-    // Business Logic Hooks
+    // Business Logic
     const {
         fileMenuAnchor, fileDialogOpen, fileOperation,
         workshopDialogOpen, setWorkshopDialogOpen,
@@ -66,7 +72,7 @@ const Editor: React.FC = () => {
     const { handleColorChange, handleUpdateObject, handleObjectSelect } = useObjectUpdate(sceneManager);
     const { handleAgentCommand } = useAgentCommands(sceneManager, handleUpdateObject);
 
-    // Context Menu Items
+    // Memoized Context Menu
     const menuItems = useMemo(() => createContextMenuItems(
         windowManager.openWindow,
         sceneManager,
@@ -88,7 +94,7 @@ const Editor: React.FC = () => {
 
     useEffect(() => {
         sceneTree.updateTree(sceneManager.getTreeScene() as any);
-    }, [sceneManager.objects, sceneManager]);
+    }, [sceneManager.objects, sceneManager, sceneTree]);
 
     const handleOpenWindow = useCallback((id: keyof typeof WINDOW_CONFIG) => {
         const config = WINDOW_CONFIG[id];
@@ -112,25 +118,66 @@ const Editor: React.FC = () => {
     return (
         <Box
             sx={{
-                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-                bgcolor: 'background.default', overflow: 'hidden',
+                position: 'fixed', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                bgcolor: 'background.default',
+                color: 'text.primary',
+                overflow: 'hidden',
                 ...(isMobile && { width: '100vw', height: '100vh' }),
             }}
             onContextMenu={handleOnContextMenu}
         >
             {/* Navigation Bar */}
-            <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+            <AppBar 
+                position="static" 
+                elevation={0} 
+                sx={{ 
+                    bgcolor: 'background.paper', 
+                    borderBottom: 1, 
+                    borderColor: 'divider',
+                    zIndex: theme.zIndex.drawer + 1 
+                }}
+            >
                 <Toolbar variant="dense">
-                    <Typography variant="h6" sx={{ color: 'text.primary', mr: 2, fontSize: isMobile ? '1.1rem' : '1.25rem' }}>3D Editor</Typography>
+                    <Typography variant="h6" sx={{ 
+                        mr: 2, 
+                        fontSize: isMobile ? '1.1rem' : '1.25rem',
+                        color: 'text.primary'
+                    }}>
+                        3D Editor
+                    </Typography>
 
-                    <Button color="inherit" startIcon={<FolderIcon />} onClick={handleFileMenuOpen} sx={{ color: 'text.primary', mr: 1 }}>{!isMobile && "Файл"}</Button>
-                    <Button color="inherit" startIcon={<CategoryIcon />} onClick={(e) => setObjectMenuAnchor(e.currentTarget)} sx={{ color: 'text.primary', mr: 1 }}>{!isMobile && "Об'єкт"}</Button>
+                    <Button 
+                        startIcon={<FolderIcon />} 
+                        onClick={handleFileMenuOpen}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        {!isMobile && "Файл"}
+                    </Button>
+
+                    <Button 
+                        startIcon={<CategoryIcon />} 
+                        onClick={(e) => setObjectMenuAnchor(e.currentTarget)}
+                        sx={{ color: 'text.primary', mr: 1 }}
+                    >
+                        {!isMobile && "Об'єкт"}
+                    </Button>
                     
-                    <ObjectSelectorMenu anchorEl={objectMenuAnchor} open={Boolean(objectMenuAnchor)} onClose={() => setObjectMenuAnchor(null)} onSelect={handleObjectSelect} />
+                    <ObjectSelectorMenu 
+                        anchorEl={objectMenuAnchor} 
+                        open={Boolean(objectMenuAnchor)} 
+                        onClose={() => setObjectMenuAnchor(null)} 
+                        onSelect={handleObjectSelect} 
+                    />
                     
                     {!isMobile && (
-                        <Button color="inherit" startIcon={<HelpIcon />} onClick={() => handleOpenWindow('instructions')} sx={{ color: 'text.primary', mr: 1 }}>Інструкція</Button>
+                        <Button 
+                            startIcon={<HelpIcon />} 
+                            onClick={() => handleOpenWindow('instructions')}
+                            sx={{ color: 'text.primary', mr: 1 }}
+                        >
+                            Інструкція
+                        </Button>
                     )}
 
                     <Menu anchorEl={fileMenuAnchor} open={Boolean(fileMenuAnchor)} onClose={handleFileMenuClose}>
@@ -153,7 +200,10 @@ const Editor: React.FC = () => {
                         <IconButton size="small" onClick={() => handleOpenWindow('settings')} sx={{ color: 'text.primary' }}>
                             <SettingsIcon />
                         </IconButton>
-                        <Button variant="contained" size="small" startIcon={<AIIcon />} onClick={() => handleOpenWindow('chat')} sx={{ ml: 1 }}>AI Chat</Button>
+                        
+                        <Button variant="contained" size="small" startIcon={<AIIcon />} onClick={() => handleOpenWindow('chat')} sx={{ ml: 1 }}>
+                            AI Chat
+                        </Button>
                     </Box>
                 </Toolbar>
             </AppBar>
@@ -170,7 +220,12 @@ const Editor: React.FC = () => {
                     onColorChange={handleColorChange}
                 />
 
-                <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', bgcolor: COLORS.SCENE_BACKGROUND }}>
+                <Box sx={{ 
+                    flex: 1, 
+                    position: 'relative', 
+                    overflow: 'hidden', 
+                    bgcolor: theme.palette.editor.sceneBackground // Динамічний фон з теми
+                }}>
                     <ThreeScene
                         objects={sceneManager.objects}
                         selectObject={sceneManager.selectObject}
@@ -183,7 +238,12 @@ const Editor: React.FC = () => {
                 </Box>
 
                 {!isMobile && (
-                    <Box sx={{ width: UI_DIMENSIONS.RIGHT_MENU_WIDTH, borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                    <Box sx={{ 
+                        width: UI_DIMENSIONS.RIGHT_MENU_WIDTH, 
+                        borderLeft: 1, 
+                        borderColor: 'divider', 
+                        bgcolor: 'background.paper' 
+                    }}>
                         <RightMenu
                             treeData={sceneTree.treeData}
                             onUpdateTree={sceneTree.updateTree}
@@ -197,12 +257,32 @@ const Editor: React.FC = () => {
             </Box>
 
             {/* Overlays */}
-            <ContextMenu isVisible={contextMenu.isVisible} position={contextMenu.position} items={menuItems} onClose={contextMenu.hideContextMenu} />
+            <ContextMenu 
+                isVisible={contextMenu.isVisible} 
+                position={contextMenu.position} 
+                items={menuItems} 
+                onClose={contextMenu.hideContextMenu} 
+            />
 
-            <FileDialog open={fileDialogOpen} operation={fileOperation} onClose={handleFileDialogClose} onConfirm={handleFileConfirm} objectsCount={sceneManager.objects.length} />
-            <WorkshopDialog open={workshopDialogOpen} onClose={() => setWorkshopDialogOpen(false)} onLoadProject={handleLoadProject} />
-            <ObjectSelectorDialog open={objectSelectorDialogOpen} onClose={() => setObjectSelectorDialogOpen(false)} onSelect={handleObjectSelect} />
+            <FileDialog 
+                open={fileDialogOpen} 
+                operation={fileOperation} 
+                onClose={handleFileDialogClose} 
+                onConfirm={handleFileConfirm} 
+                objectsCount={sceneManager.objects.length} 
+            />
+            <WorkshopDialog 
+                open={workshopDialogOpen} 
+                onClose={() => setWorkshopDialogOpen(false)} 
+                onLoadProject={handleLoadProject} 
+            />
+            <ObjectSelectorDialog 
+                open={objectSelectorDialogOpen} 
+                onClose={() => setObjectSelectorDialogOpen(false)} 
+                onSelect={handleObjectSelect} 
+            />
 
+            {/* Floating Windows */}
             {windowManager.windows.map(win => (
                 <Window 
                     key={win.id} {...win} 
@@ -214,7 +294,14 @@ const Editor: React.FC = () => {
                     onFocus={() => windowManager.focusWindow(win.id)}
                 >
                     {win.id === 'settings' && <Settings onClose={() => windowManager.closeWindow('settings')} />}
-                    {win.id === 'chat' && <Chat onClose={() => windowManager.closeWindow('chat')} onAgentCommand={handleAgentCommand} selectedObjectId={sceneManager.selectedObjectId} objects={sceneManager.objects} />}
+                    {win.id === 'chat' && (
+                        <Chat 
+                            onClose={() => windowManager.closeWindow('chat')} 
+                            onAgentCommand={handleAgentCommand} 
+                            selectedObjectId={sceneManager.selectedObjectId} 
+                            objects={sceneManager.objects} 
+                        />
+                    )}
                     {win.id === 'instructions' && <Instructions onClose={() => windowManager.closeWindow('instructions')} />}
                 </Window>
             ))}
