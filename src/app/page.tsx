@@ -1,7 +1,12 @@
 "use client";
 
 import React from 'react';
-import Editor from '@/components/UI/Layaout/EditField';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@/components/UI/Layaout/EditField'), { 
+  ssr: false,
+  loading: () => <div>Завантаження 3D сцени...</div>
+});
 
 const Home: React.FC = () => {
   return <Editor />;

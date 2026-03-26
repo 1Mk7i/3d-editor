@@ -4,15 +4,6 @@ import React from 'react';
 import * as THREE from 'three';
 import { useSceneManager } from '@/hooks/useSceneManager';
 import { ThreeObjectType, createThreeObject } from '@/shared/constants/threeObjects';
-import { FileFormat } from '../FileMenu/FileDialog';
-import {
-    importFromJSON,
-    createObjectFromData,
-    loadFileAsText,
-    importModelFromFile,
-    exportSceneToFormat,
-} from '@/shared/services/fileService';
-import { saveProject } from '@/shared/services/projectService';
 
 type ObjectUpdate = {
     name?: string;
@@ -43,14 +34,20 @@ export function useObjectUpdate(sceneManager: ReturnType<typeof useSceneManager>
         const object = sceneManager.objects.find(obj => obj.id === id);
         if (!object) return;
 
-        const mesh = object.mesh as THREE.Mesh;
+        const mesh = object.mesh; 
 
-        if (updates.name !== undefined || updates.position || updates.rotation) {
-            sceneManager.updateObject(id, {
-                name: updates.name,
-                position: updates.position,
-                rotation: updates.rotation,
-            });
+        if (updates.name !== undefined) {
+            sceneManager.updateObject(id, { name: updates.name });
+        }
+
+        if (updates.position) {
+            mesh.position.set(updates.position.x, updates.position.y, updates.position.z);
+            sceneManager.updateObject(id, { position: updates.position });
+        }
+
+        if (updates.rotation) {
+            mesh.rotation.set(updates.rotation.x, updates.rotation.y, updates.rotation.z);
+            sceneManager.updateObject(id, { rotation: updates.rotation });
         }
 
         if (updates.scale) {
@@ -58,36 +55,29 @@ export function useObjectUpdate(sceneManager: ReturnType<typeof useSceneManager>
         }
 
         if (updates.color !== undefined) {
-            const material = mesh.material as THREE.MeshStandardMaterial | THREE.PointsMaterial;
-            if (material && 'color' in material) {
+            const material = (mesh as THREE.Mesh).material as any;
+            if (material && material.color) {
                 material.color.setHex(updates.color);
             }
         }
 
         if (updates.materialType) {
-            const currentMaterial = mesh.material as THREE.MeshStandardMaterial;
-            if (currentMaterial) {
-                if (updates.materialType === 'wireframe') {
-                    currentMaterial.wireframe = true;
-                } else if (updates.materialType === 'points') {
-                    if (!(currentMaterial instanceof THREE.PointsMaterial)) {
-                        mesh.material = new THREE.PointsMaterial({
-                            color: currentMaterial.color.getHex(),
-                            size: 0.1,
-                        });
-                    }
-                } else {
-                    if (mesh.material instanceof THREE.PointsMaterial) {
-                        mesh.material = new THREE.MeshStandardMaterial({
-                            color: mesh.material.color.getHex(),
-                        });
-                    } else {
-                        currentMaterial.wireframe = false;
-                    }
+            const m = mesh as THREE.Mesh;
+            if (updates.materialType === 'wireframe') {
+                (m.material as any).wireframe = true;
+            } else if (updates.materialType === 'standard') {
+                (m.material as any).wireframe = false;
+                if (m.material instanceof THREE.PointsMaterial) {
+                    m.material = new THREE.MeshStandardMaterial({ color: m.material.color.getHex() });
+                }
+            } else if (updates.materialType === 'points') {
+                if (!(m.material instanceof THREE.PointsMaterial)) {
+                    const oldColor = (m.material as any).color?.getHex() || 0xffffff;
+                    m.material = new THREE.PointsMaterial({ color: oldColor, size: 0.1 });
                 }
             }
         }
-    }, [sceneManager.objects]);
+    }, [sceneManager]);
 
     const handleObjectSelect = React.useCallback((objectType: ThreeObjectType) => {
         const mesh = createThreeObject(objectType);
