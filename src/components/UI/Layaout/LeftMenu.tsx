@@ -21,13 +21,12 @@ import {
 interface LeftMenuProps {
     isEditMode: boolean;
     selectedObjectId: string | null;
-    onAddObject: () => void; // Тепер просто callback для відкриття діалогу
+    onAddObject: () => void;
     onToggleEditMode: () => void;
     onSetTransformMode: (mode: 'translate' | 'rotate' | 'scale') => void;
     onRemoveObject: (id: string) => void;
-    onColorChange: () => void;
+    onColorChange: (color: string) => void; 
 }
-
 
 const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMenuProps['onSetTransformMode'] }) => {
     const handleTranslate = useCallback(() => {

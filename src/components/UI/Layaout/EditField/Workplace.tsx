@@ -1,0 +1,69 @@
+'use client';
+
+import React from 'react';
+import { Box, useTheme } from '@mui/material';
+import { LeftMenu } from '../LeftMenu';
+import { RightMenu } from '../RightMenu';
+import ThreeScene from '@/components/UI/Scene/ThreeScene';
+import { UI_DIMENSIONS } from '@/config/editorConfig';
+
+interface WorkplaceProps {
+    isMobile: boolean;
+    sceneManager: any; 
+    sceneTree: any;
+    settings: any;
+    handleColorChange: (color: string) => void;
+    handleUpdateObject: (id: string, updates: any) => void;
+    setObjectSelectorDialogOpen: (open: boolean) => void;
+}
+
+export const Workplace: React.FC<WorkplaceProps> = ({
+    isMobile,
+    sceneManager,
+    sceneTree,
+    settings,
+    handleColorChange,
+    handleUpdateObject,
+    setObjectSelectorDialogOpen,
+}) => {
+    const theme = useTheme();
+
+    return (
+        <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <LeftMenu
+                isEditMode={sceneManager.isEditMode}
+                selectedObjectId={sceneManager.selectedObjectId}
+                onAddObject={() => setObjectSelectorDialogOpen(true)}
+                onToggleEditMode={sceneManager.toggleEditMode}
+                onSetTransformMode={sceneManager.setTransformMode}
+                onRemoveObject={sceneManager.removeObject}
+                onColorChange={handleColorChange} 
+            />
+
+            <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', bgcolor: theme.palette.editor?.sceneBackground }}>
+                <ThreeScene
+                    objects={sceneManager.objects}
+                    selectObject={sceneManager.selectObject}
+                    selectedObjectId={sceneManager.selectedObjectId}
+                    clearSelection={sceneManager.clearSelection}
+                    isEditMode={sceneManager.isEditMode}
+                    transformMode={sceneManager.transformMode}
+                    settings={settings}
+                />
+            </Box>
+
+            {!isMobile && (
+                <Box sx={{ width: UI_DIMENSIONS.RIGHT_MENU_WIDTH, borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                    <RightMenu
+                        treeData={sceneTree.treeData}
+                        onUpdateTree={sceneTree.updateTree}
+                        selectedObjectId={sceneManager.selectedObjectId}
+                        objects={sceneManager.objects}
+                        onSelectObject={sceneManager.selectObject}
+                        onUpdateObject={handleUpdateObject}
+                    />
+                </Box>
+            )}
+        </Box>
+    );
+};
