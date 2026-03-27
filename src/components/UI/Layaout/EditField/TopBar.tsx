@@ -82,12 +82,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }}
                 />
 
-                {!isMobile && (
-                    <Button startIcon={<HelpIcon />} onClick={() => handleOpenWindow('instructions')} sx={{ color: 'text.primary' }}>
-                        Інструкція
-                    </Button>
-                )}
-
+                <Button startIcon={<HelpIcon />} onClick={() => handleOpenWindow('instructions')} sx={{ color: 'text.primary' }}>
+                    Інструкція
+                </Button>
+                
                 <Menu anchorEl={fileMenuAnchor} open={Boolean(fileMenuAnchor)} onClose={handleFileMenuClose}>
                     <MenuItem onClick={() => handleFileMenuClick('import')}>Імпорт моделі</MenuItem>
                     <MenuItem onClick={() => handleFileMenuClick('export')}>Експорт моделі</MenuItem>
