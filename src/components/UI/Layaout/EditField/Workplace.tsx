@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, useTheme } from '@mui/material';
+import { Box, useTheme, Drawer } from '@mui/material';
 import { LeftMenu } from '../LeftMenu';
 import { RightMenu } from '../RightMenu';
 import ThreeScene from '@/components/UI/Scene/ThreeScene';
@@ -29,6 +29,17 @@ export const Workplace: React.FC<WorkplaceProps> = ({
     setObjectSelectorDialogOpen,
 }) => {
     const theme = useTheme();
+
+    const renderRightMenu = () => (
+        <RightMenu
+            treeData={sceneTree.treeData}
+            onUpdateTree={sceneTree.updateTree}
+            selectedObjectId={sceneManager.selectedObjectId}
+            objects={sceneManager.objects}
+            onSelectObject={sceneManager.selectObject}
+            onUpdateObject={handleUpdateObject}
+        />
+    );
 
     return (
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
@@ -71,14 +82,28 @@ export const Workplace: React.FC<WorkplaceProps> = ({
                         to: { opacity: 1, transform: 'translateX(0)' }
                     }
                 }}>
-                    <RightMenu
-                        treeData={sceneTree.treeData}
-                        onUpdateTree={sceneTree.updateTree}
-                        selectedObjectId={sceneManager.selectedObjectId}
-                        objects={sceneManager.objects}
-                        onSelectObject={sceneManager.selectObject}
-                        onUpdateObject={handleUpdateObject}
-                    />
+                    {renderRightMenu()}
+                </Box>
+            )}
+
+            {isMobile && (
+                <Box sx={{
+                    position: 'fixed',
+                    right: 0,
+                    top: 48,
+                    bottom: 0,
+                    width: '280px',
+                    zIndex: 1300,
+                    bgcolor: 'background.paper',
+                    borderLeft: 1,
+                    borderColor: 'divider',
+                    boxShadow: '-4px 0 10px rgba(0,0,0,0.1)',
+                    transform: showRightMenu ? 'translateX(0)' : 'translateX(100%)',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    {renderRightMenu()}
                 </Box>
             )}
         </Box>

@@ -1,16 +1,12 @@
-/* KDE Plasma Window Styles */
 .kde-window {
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
   border: 1px solid #c5c5c5;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transition: box-shadow 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-}
-
-.kde-window:hover {
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 
 .kde-window.maximized {
@@ -18,46 +14,15 @@
   border: none;
 }
 
-.kde-window.dragging {
-  cursor: move;
-  user-select: none;
-}
-
-.kde-window.resizing {
-  user-select: none;
-}
-
-/* Title Bar */
 .kde-window-titlebar {
   height: 32px;
+  min-height: 32px;
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
   border-bottom: 1px solid #dee2e6;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 8px;
-  cursor: move;
-  user-select: none;
-}
-
-.kde-window-titlebar:hover {
-  background: linear-gradient(180deg, #f1f3f4 0%, #e1e5e9 100%);
-}
-
-.kde-window-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.kde-window-icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -65,19 +30,6 @@
   font-size: 13px;
   font-weight: 500;
   color: #2c3e50;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Window Controls */
-.kde-window-controls {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-  padding: 2px;
-  position: relative;
-  z-index: 10;
 }
 
 .kde-window-control {
@@ -90,27 +42,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 400;
   transition: all 0.15s ease;
-  color: rgba(255, 255, 255, 0.8);
-  position: relative;
-  overflow: hidden;
-  z-index: 11;
-}
-
-.kde-window-control:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 1);
-}
-
-.kde-window-control:active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(0.95);
-}
-
-.kde-window-control.close {
-  background: transparent;
+  color: #555;
 }
 
 .kde-window-control.close:hover {
@@ -120,246 +53,49 @@
 
 .kde-window-control.close:active {
   background: #e74c3c;
-}
-
-.kde-window-control.minimize {
-  background: transparent;
-}
-
-.kde-window-control.minimize:hover {
-  background: #ffa726;
-  color: white;
-}
-
-.kde-window-control.minimize:active {
-  background: #ff9800;
-}
-
-.kde-window-control.maximize {
-  background: transparent;
-}
-
-.kde-window-control.maximize:hover {
-  background: #66bb6a;
-  color: white;
-}
-
-.kde-window-control.maximize:active {
-  background: #4caf50;
-}
-
-/* SVG icons in controls */
-.kde-window-control svg {
-  transition: all 0.1s ease;
-}
-
-.kde-window-control:active svg {
   transform: scale(0.9);
 }
 
-/* Focus states for accessibility */
-.kde-window-control:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
-}
-
-/* Content Area */
-.kde-window-content {
-  height: calc(100% - 33px); /* 32px titlebar + 1px border */
-  overflow: hidden;
-  background: #ffffff;
-  position: relative;
-}
-
-/* Resize Handles */
-.kde-window-resize-handle {
-  position: absolute;
-  z-index: 10;
-}
-
-/* Corner handles */
-.kde-window-resize-handle.top-left {
-  top: -4px;
-  left: -4px;
-  width: 8px;
-  height: 8px;
-  cursor: nw-resize;
-}
-
-.kde-window-resize-handle.top-right {
-  top: -4px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
-  cursor: ne-resize;
-}
-
-.kde-window-resize-handle.bottom-left {
-  bottom: -4px;
-  left: -4px;
-  width: 8px;
-  height: 8px;
-  cursor: sw-resize;
-}
-
-.kde-window-resize-handle.bottom-right {
-  bottom: -4px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
-  cursor: se-resize;
-}
-
-/* Edge handles */
-.kde-window-resize-handle.top {
-  top: -4px;
-  left: 8px;
-  right: 8px;
-  height: 8px;
-  cursor: n-resize;
-}
-
-.kde-window-resize-handle.bottom {
-  bottom: -4px;
-  left: 8px;
-  right: 8px;
-  height: 8px;
-  cursor: s-resize;
-}
-
-.kde-window-resize-handle.left {
-  left: -4px;
-  top: 8px;
-  bottom: 8px;
-  width: 8px;
-  cursor: w-resize;
-}
-
-.kde-window-resize-handle.right {
-  right: -4px;
-  top: 8px;
-  bottom: 8px;
-  width: 8px;
-  cursor: e-resize;
-}
-
-/* Window animations */
-@keyframes windowFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes windowFadeOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-.kde-window.closing {
-  animation: windowFadeOut 0.3s ease-out forwards;
-}
-
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .kde-window {
-    background: #2b2b2b;
-    border-color: #404040;
-  }
-
-  .kde-window-titlebar {
-    background: linear-gradient(180deg, #3c3c3c 0%, #2b2b2b 100%);
-    border-bottom-color: #404040;
-  }
-
-  .kde-window-titlebar:hover {
-    background: linear-gradient(180deg, #404040 0%, #2f2f2f 100%);
-  }
-
-  .kde-window-title-text {
-    color: #ffffff;
-  }
-
-  .kde-window-control {
-    color: #ffffff;
-  }
-
-  .kde-window-control:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .kde-window-control:active {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .kde-window-content {
-    background: #2b2b2b;
-  }
-}
-
-/* Accessibility */
-.kde-window-control:focus-visible {
-  outline: 2px solid #3daee9;
-  outline-offset: 2px;
-}
-
-/* Disable text selection during drag/resize */
-.kde-window.dragging *,
-.kde-window.resizing * {
-  user-select: none !important;
-  pointer-events: none;
-}
-
-.kde-window.dragging .kde-window-titlebar,
-.kde-window.resizing .kde-window-resize-handle {
-  pointer-events: auto;
-}
-
-/* Mobile styles */
 @media (max-width: 768px) {
-  .kde-window {
+  .kde-window.mobile {
     border-radius: 0;
     border: none;
     box-shadow: none;
   }
 
-  .kde-window.maximized {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-  }
-
   .kde-window-titlebar {
     height: 48px;
+    min-height: 48px;
     padding: 0 12px;
+    padding-top: env(safe-area-inset-top, 0px); 
+    box-sizing: content-box;
   }
 
-  .kde-window-control {
+  .kde-window-control.close {
     width: 32px;
     height: 32px;
   }
+}
 
-  .kde-window-content {
-    height: calc(100% - 48px);
-  }
+.kde-window-content {
+  flex: 1;
+  overflow: auto;
+  background: #ffffff;
+  -webkit-overflow-scrolling: touch;
+}
 
-  /* Приховуємо кнопки мінімізації та максимізації на мобільних */
-  .kde-window-control.minimize,
-  .kde-window-control.maximize {
-    display: none;
+.kde-window.closing {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .kde-window { background: #2b2b2b; border-color: #404040; }
+  .kde-window-titlebar {
+    background: linear-gradient(180deg, #3c3c3c 0%, #2b2b2b 100%);
+    border-bottom-color: #404040;
   }
+  .kde-window-title-text { color: #ffffff; }
+  .kde-window-content { background: #2b2b2b; }
 }
