@@ -2,5 +2,5 @@
  * Централізований експорт утиліт
  */
 
-export { logger, logError, logObject } from './logger';
+export { logger, logError } from './logger';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -20,6 +20,10 @@ import {
   Stack,
   Alert,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Palette as PaletteIcon,
@@ -28,7 +32,6 @@ import {
   ThreeDRotation as SceneIcon,
 } from '@mui/icons-material';
 import { useSettings } from '@/hooks/useSettings';
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 export interface SettingsProps {
   onClose?: () => void;
@@ -36,20 +39,15 @@ export interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const { settings: currentSettings, saveSettings, resetSettings, clearAllData } = useSettings();
-  const [localSettings, setLocalSettings] = useState<typeof currentSettings>(currentSettings);
+  
+  const [localSettings, setLocalSettings] = useState(currentSettings);
   const [activeTab, setActiveTab] = useState(0);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
 
-  // Синхронізуємо локальний стан з поточними налаштуваннями при відкритті
-  // Використовуємо useRef щоб не оновлювати при збереженні
-  const isInitialMount = React.useRef(true);
-  React.useEffect(() => {
-    if (isInitialMount.current) {
-      setLocalSettings(currentSettings);
-      isInitialMount.current = false;
-    }
-  }, []);
+  useEffect(() => {
+    setLocalSettings(currentSettings);
+  }, [currentSettings]);
 
   const handleSettingChange = <K extends keyof typeof localSettings>(
     key: K,
@@ -64,29 +62,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   const handleReset = () => {
-    const defaultSettings = {
-      theme: 'dark' as const,
-      language: 'uk',
-      fontSize: 14,
-      animations: true,
-      notifications: true,
-      autoSave: true,
-      autoSaveInterval: 30,
-      sceneBackgroundColor: '#121212',
-      gridVisible: true,
-      gridSize: 20,
-      gridDivisions: 20,
-      renderQuality: 'high' as const,
-      shadows: true,
-      antialiasing: true,
-    };
-    setLocalSettings(defaultSettings);
     resetSettings();
     setShowSuccessMessage(true);
-  };
-
-  const handleClearData = () => {
-    setShowClearDialog(true);
   };
 
   const confirmClearData = () => {
@@ -113,63 +90,33 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
           sx={{
-            borderRight: 1,
-            borderColor: 'divider',
+            height: '100%',
             '& .MuiTab-root': {
               minHeight: 64,
-              alignItems: 'flex-start',
+              alignItems: 'center',
               justifyContent: 'flex-start',
               px: 2,
+              textAlign: 'left'
             },
           }}
         >
-          <Tab
-            icon={<PaletteIcon />}
-            iconPosition="start"
-            label="Вигляд"
-            sx={{ textTransform: 'none' }}
-          />
-          <Tab
-            icon={<SettingsIcon />}
-            iconPosition="start"
-            label="Поведінка"
-            sx={{ textTransform: 'none' }}
-          />
-          <Tab
-            icon={<LockIcon />}
-            iconPosition="start"
-            label="Приватність"
-            sx={{ textTransform: 'none' }}
-          />
-          <Tab
-            icon={<SceneIcon />}
-            iconPosition="start"
-            label="3D Сцена"
-            sx={{ textTransform: 'none' }}
-          />
+          <Tab icon={<PaletteIcon />} iconPosition="start" label="Вигляд" />
+          <Tab icon={<SettingsIcon />} iconPosition="start" label="Поведінка" />
+          <Tab icon={<LockIcon />} iconPosition="start" label="Приватність" />
+          <Tab icon={<SceneIcon />} iconPosition="start" label="3D Сцена" />
         </Tabs>
       </Paper>
 
-      {/* Content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Typography variant="h5">
+      {/* Content Area */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, p: 3, overflowY: 'auto' }}>
+          <Typography variant="h5" sx={{ mb: 3 }}>
             {activeTab === 0 && 'Вигляд'}
             {activeTab === 1 && 'Поведінка'}
             {activeTab === 2 && 'Приватність'}
             {activeTab === 3 && '3D Сцена'}
           </Typography>
-        </Paper>
 
-        <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
           {activeTab === 0 && (
             <Stack spacing={3}>
               <FormControl fullWidth>
@@ -177,7 +124,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 <Select
                   value={localSettings.theme}
                   label="Тема"
-                  onChange={(e) => handleSettingChange('theme', e.target.value as 'light' | 'dark' | 'auto')}
+                  onChange={(e) => handleSettingChange('theme', e.target.value as any)}
                 >
                   <MenuItem value="light">Світла</MenuItem>
                   <MenuItem value="dark">Темна</MenuItem>
@@ -186,16 +133,11 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               </FormControl>
 
               <Box>
-                <Typography gutterBottom>
-                  Розмір шрифту: {localSettings.fontSize}px
-                </Typography>
+                <Typography gutterBottom>Розмір шрифту: {localSettings.fontSize}px</Typography>
                 <Slider
                   value={localSettings.fontSize}
                   onChange={(_, value) => handleSettingChange('fontSize', value as number)}
-                  min={10}
-                  max={20}
-                  marks
-                  step={1}
+                  min={10} max={20} step={1} marks
                 />
               </Box>
 
@@ -216,48 +158,22 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           {activeTab === 1 && (
             <Stack spacing={3}>
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.animations}
-                    onChange={(e) => handleSettingChange('animations', e.target.checked)}
-                  />
-                }
+                control={<Switch checked={localSettings.animations} onChange={(e) => handleSettingChange('animations', e.target.checked)} />}
                 label="Увімкнути анімації"
               />
-
               <Divider />
-
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.autoSave}
-                    onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
-                  />
-                }
+                control={<Switch checked={localSettings.autoSave} onChange={(e) => handleSettingChange('autoSave', e.target.checked)} />}
                 label="Автоматично зберігати зміни"
               />
-
               {localSettings.autoSave && (
                 <Box>
-                  <Typography gutterBottom>
-                    Інтервал автозбереження: {localSettings.autoSaveInterval} секунд
-                  </Typography>
+                  <Typography gutterBottom>Інтервал: {localSettings.autoSaveInterval}с</Typography>
                   <Slider
                     value={localSettings.autoSaveInterval}
                     onChange={(_, value) => handleSettingChange('autoSaveInterval', value as number)}
-                    min={10}
-                    max={300}
-                    step={10}
-                    marks={[
-                      { value: 10, label: '10с' },
-                      { value: 60, label: '1хв' },
-                      { value: 120, label: '2хв' },
-                      { value: 300, label: '5хв' },
-                    ]}
+                    min={10} max={300} step={10}
                   />
-                  <Typography variant="caption" color="text.secondary">
-                    Автозбереження зберігає поточну сесію для відновлення при несподіваному закритті
-                  </Typography>
                 </Box>
               )}
             </Stack>
@@ -266,23 +182,11 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           {activeTab === 2 && (
             <Stack spacing={3}>
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.notifications}
-                    onChange={(e) => handleSettingChange('notifications', e.target.checked)}
-                  />
-                }
+                control={<Switch checked={localSettings.notifications} onChange={(e) => handleSettingChange('notifications', e.target.checked)} />}
                 label="Увімкнути сповіщення"
               />
-
               <Divider />
-
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleClearData}
-                fullWidth
-              >
+              <Button variant="outlined" color="error" onClick={() => setShowClearDialog(true)} fullWidth>
                 Очистити всі дані
               </Button>
             </Stack>
@@ -290,167 +194,77 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
           {activeTab === 3 && (
             <Stack spacing={3}>
-              <FormControl fullWidth>
-                <InputLabel>Фон</InputLabel>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
-                  <TextField
-                    type="color"
-                    value={localSettings.sceneBackgroundColor}
-                    onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
-                    sx={{ width: 80, height: 56 }}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Hex код"
-                    value={localSettings.sceneBackgroundColor}
-                    onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
-                    placeholder="#121212"
-                  />
-                </Box>
-              </FormControl>
-
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <TextField
+                  type="color"
+                  label="Колір фону"
+                  value={localSettings.sceneBackgroundColor}
+                  onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
+                  sx={{ width: 100 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Hex код"
+                  value={localSettings.sceneBackgroundColor}
+                  onChange={(e) => handleSettingChange('sceneBackgroundColor', e.target.value)}
+                />
+              </Box>
               <Divider />
-
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.gridVisible}
-                    onChange={(e) => handleSettingChange('gridVisible', e.target.checked)}
-                  />
-                }
+                control={<Switch checked={localSettings.gridVisible} onChange={(e) => handleSettingChange('gridVisible', e.target.checked)} />}
                 label="Показати сітку"
               />
-
-              {localSettings.gridVisible && (
-                <Box>
-                  <Typography gutterBottom>
-                    Розмір сітки: {localSettings.gridSize}
-                  </Typography>
-                  <Slider
-                    value={localSettings.gridSize}
-                    onChange={(_, value) => handleSettingChange('gridSize', value as number)}
-                    min={5}
-                    max={50}
-                    marks
-                    step={5}
-                  />
-                </Box>
-              )}
-
-              {localSettings.gridVisible && (
-                <Box>
-                  <Typography gutterBottom>
-                    Кількість поділок: {localSettings.gridDivisions}
-                  </Typography>
-                  <Slider
-                    value={localSettings.gridDivisions}
-                    onChange={(_, value) => handleSettingChange('gridDivisions', value as number)}
-                    min={5}
-                    max={50}
-                    marks
-                    step={5}
-                  />
-                </Box>
-              )}
-
-              <Divider />
-
               <FormControl fullWidth>
                 <InputLabel>Якість рендерингу</InputLabel>
                 <Select
                   value={localSettings.renderQuality}
                   label="Якість рендерингу"
-                  onChange={(e) => handleSettingChange('renderQuality', e.target.value as 'low' | 'medium' | 'high')}
+                  onChange={(e) => handleSettingChange('renderQuality', e.target.value as any)}
                 >
                   <MenuItem value="low">Низька</MenuItem>
                   <MenuItem value="medium">Середня</MenuItem>
                   <MenuItem value="high">Висока</MenuItem>
                 </Select>
               </FormControl>
-
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.shadows}
-                    onChange={(e) => handleSettingChange('shadows', e.target.checked)}
-                  />
-                }
+                control={<Switch checked={localSettings.shadows} onChange={(e) => handleSettingChange('shadows', e.target.checked)} />}
                 label="Увімкнути тіні"
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={localSettings.antialiasing}
-                    onChange={(e) => handleSettingChange('antialiasing', e.target.checked)}
-                  />
-                }
-                label="Увімкнути згладжування"
               />
             </Stack>
           )}
         </Box>
 
-        {/* Footer */}
+        {/* Action Footer */}
         <Paper
           elevation={0}
           sx={{
             p: 2,
             borderTop: 1,
             borderColor: 'divider',
-            bgcolor: 'background.paper',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            bgcolor: 'background.paper',
           }}
         >
-          <Button variant="outlined" onClick={handleReset}>
-            Скинути
-          </Button>
+          <Button variant="outlined" onClick={handleReset}>Скинути</Button>
           <Stack direction="row" spacing={2}>
-            <Button variant="outlined" onClick={onClose}>
-              Скасувати
-            </Button>
-            <Button variant="contained" onClick={handleSave}>
-              Зберегти
-            </Button>
+            <Button variant="outlined" onClick={onClose}>Скасувати</Button>
+            <Button variant="contained" onClick={handleSave}>Зберегти</Button>
           </Stack>
         </Paper>
       </Box>
 
-      {/* Success Message */}
-      <Snackbar
-        open={showSuccessMessage}
-        autoHideDuration={2000}
-        onClose={() => setShowSuccessMessage(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setShowSuccessMessage(false)}>
-          Налаштування збережено
-        </Alert>
+      {/* Messages & Dialogs */}
+      <Snackbar open={showSuccessMessage} autoHideDuration={2000} onClose={() => setShowSuccessMessage(false)}>
+        <Alert severity="success" variant="filled">Налаштування збережено!</Alert>
       </Snackbar>
 
-      {/* Clear Data Dialog */}
-      <Dialog
-        open={showClearDialog}
-        onClose={() => setShowClearDialog(false)}
-      >
-        <DialogTitle>Очистити всі дані?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Ви впевнені, що хочете очистити всі дані? Ця дія незворотна і видалить всі налаштування та збережені дані.
-          </Typography>
-        </DialogContent>
+      <Dialog open={showClearDialog} onClose={() => setShowClearDialog(false)}>
+        <DialogTitle>Очистити все?</DialogTitle>
+        <DialogContent>Це видалить всі ваші проекти та налаштування без можливості відновлення.</DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowClearDialog(false)}>
-            Скасувати
-          </Button>
-          <Button onClick={confirmClearData} color="error" variant="contained">
-            Очистити
-          </Button>
+          <Button onClick={() => setShowClearDialog(false)}>Скасувати</Button>
+          <Button onClick={confirmClearData} color="error" variant="contained">Видалити все</Button>
         </DialogActions>
       </Dialog>
     </Box>
