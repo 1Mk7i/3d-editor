@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip, useTheme } from '@mui/material';
-import { Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, Category as CategoryIcon, Help as HelpIcon, Fullscreen as FullscreenIcon, FullscreenExit } from '@mui/icons-material';
+import { 
+    Box, AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip, useTheme 
+} from '@mui/material';
+import { 
+    Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, 
+    Category as CategoryIcon, Help as HelpIcon, Fullscreen as FullscreenIcon, 
+    FullscreenExit, ViewSidebar as SidebarIcon 
+} from '@mui/icons-material';
 
 // Components
 import { Workplace } from './Workplace';
@@ -27,6 +33,8 @@ import useSceneTree from '@/hooks/useSceneTree';
 import { useFileOperations } from './useFileOperations';
 import { useObjectUpdate } from './useObjectUpdate';
 import { useAgentCommands } from './useAgentCommands';
+
+// Config
 import { createContextMenuItems } from '@/config/contextMenuConfig';
 import { WINDOW_CONFIG } from '@/config/editorConfig';
 
@@ -42,6 +50,7 @@ const Editor: React.FC = () => {
     const sceneTree = useSceneTree();
 
     const [isMounted, setIsMounted] = useState(false);
+    const [showRightMenu, setShowRightMenu] = useState(true);
     const [objectMenuAnchor, setObjectMenuAnchor] = useState<null | HTMLElement>(null);
     const [objectSelectorDialogOpen, setObjectSelectorDialogOpen] = useState(false);
 
@@ -62,12 +71,16 @@ const Editor: React.FC = () => {
 
     useEffect(() => {
         setIsMounted(true);
-        if (isMobile) document.documentElement.classList.add('mobile-fullscreen');
+        if (isMobile) {
+            document.documentElement.classList.add('mobile-fullscreen');
+        }
     }, [isMobile]);
 
     useEffect(() => {
-        sceneTree.updateTree(sceneManager.getTreeScene() as any);
-    }, [sceneManager.objects, sceneManager, sceneTree]);
+        if (isMounted) {
+            sceneTree.updateTree(sceneManager.getTreeScene() as any);
+        }
+    }, [sceneManager.objects, sceneManager, sceneTree, isMounted]);
 
     const handleOpenWindow = useCallback((id: keyof typeof WINDOW_CONFIG) => {
         const config = WINDOW_CONFIG[id];
@@ -102,7 +115,21 @@ const Editor: React.FC = () => {
                         <MenuItem onClick={() => setWorkshopDialogOpen(true)}>Майстерня</MenuItem>
                     </Menu>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Box sx={{ gap: 1, display: 'flex' }}>
+                    <Box sx={{ gap: 1, display: 'flex', alignItems: 'center' }}>
+                        {!isMobile && (
+                            <Tooltip title={showRightMenu ? "Сховати панель" : "Показати панель"}>
+                                <IconButton 
+                                    size="small" 
+                                    onClick={() => setShowRightMenu(!showRightMenu)} 
+                                    sx={{ 
+                                        color: showRightMenu ? 'primary.main' : 'text.secondary',
+                                        bgcolor: showRightMenu ? 'rgba(99, 102, 241, 0.1)' : 'transparent'
+                                    }}
+                                >
+                                    <SidebarIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                         {isSupported && (
                             <IconButton size="small" onClick={toggleFullscreen}>
                                 {isFullscreen ? <FullscreenExit /> : <FullscreenIcon />}
@@ -114,9 +141,9 @@ const Editor: React.FC = () => {
                 </Toolbar>
             </AppBar>
 
-            {/* Workplace */}
             <Workplace
                 isMobile={isMobile}
+                showRightMenu={showRightMenu}
                 sceneManager={sceneManager}
                 sceneTree={sceneTree}
                 settings={settings}
@@ -125,7 +152,6 @@ const Editor: React.FC = () => {
                 setObjectSelectorDialogOpen={setObjectSelectorDialogOpen}
             />
 
-            {/* Overlays & Windows */}
             <ContextMenu isVisible={contextMenu.isVisible} position={contextMenu.position} items={menuItems} onClose={contextMenu.hideContextMenu} />
             <FileDialog open={fileDialogOpen} operation={fileOperation} onClose={handleFileDialogClose} onConfirm={handleFileConfirm} objectsCount={sceneManager.objects.length} />
             <WorkshopDialog open={workshopDialogOpen} onClose={() => setWorkshopDialogOpen(false)} onLoadProject={handleLoadProject} />

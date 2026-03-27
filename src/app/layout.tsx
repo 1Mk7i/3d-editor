@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+
 import { SettingsProvider } from "@/hooks/useSettings";
 import { ThemeProvider } from "@/shared/theme/ThemeProvider";
 
@@ -39,7 +42,6 @@ export default function RootLayout({
   return (
     <html lang="uk" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -50,11 +52,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SettingsProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </SettingsProvider>
+        <AppRouterCacheProvider>
+          <SettingsProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </SettingsProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

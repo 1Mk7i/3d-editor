@@ -9,6 +9,7 @@ import { UI_DIMENSIONS } from '@/config/editorConfig';
 
 interface WorkplaceProps {
     isMobile: boolean;
+    showRightMenu: boolean;
     sceneManager: any; 
     sceneTree: any;
     settings: any;
@@ -19,6 +20,7 @@ interface WorkplaceProps {
 
 export const Workplace: React.FC<WorkplaceProps> = ({
     isMobile,
+    showRightMenu,
     sceneManager,
     sceneTree,
     settings,
@@ -40,7 +42,12 @@ export const Workplace: React.FC<WorkplaceProps> = ({
                 onColorChange={handleColorChange} 
             />
 
-            <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', bgcolor: theme.palette.editor?.sceneBackground }}>
+            <Box sx={{ 
+                flex: 1, 
+                position: 'relative', 
+                overflow: 'hidden', 
+                bgcolor: theme.palette.editor?.sceneBackground || '#1a1a1a'
+            }}>
                 <ThreeScene
                     objects={sceneManager.objects}
                     selectObject={sceneManager.selectObject}
@@ -52,8 +59,18 @@ export const Workplace: React.FC<WorkplaceProps> = ({
                 />
             </Box>
 
-            {!isMobile && (
-                <Box sx={{ width: UI_DIMENSIONS.RIGHT_MENU_WIDTH, borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+            {!isMobile && showRightMenu && (
+                <Box sx={{ 
+                    width: UI_DIMENSIONS.RIGHT_MENU_WIDTH, 
+                    borderLeft: 1, 
+                    borderColor: 'divider', 
+                    bgcolor: 'background.paper',
+                    animation: 'slideIn 0.2s ease-out',
+                    '@keyframes slideIn': {
+                        from: { opacity: 0, transform: 'translateX(20px)' },
+                        to: { opacity: 1, transform: 'translateX(0)' }
+                    }
+                }}>
                     <RightMenu
                         treeData={sceneTree.treeData}
                         onUpdateTree={sceneTree.updateTree}
