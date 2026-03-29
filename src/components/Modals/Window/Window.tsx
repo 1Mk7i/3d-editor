@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './Window.css';
 import { WindowProps } from './types';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { SCENE_CONSTANTS } from '@/shared/constants/scene.constants';
 
 export const Window: React.FC<WindowProps> = ({
   title,
@@ -16,7 +17,7 @@ export const Window: React.FC<WindowProps> = ({
   children,
   onClose,
   onFocus,
-  zIndex = 1000,
+  zIndex = SCENE_CONSTANTS.Z_INDEX.WINDOW_BASE,
 }) => {
   const isMobile = useIsMobile();
   const [isClosing, setIsClosing] = useState(false);
@@ -26,7 +27,7 @@ export const Window: React.FC<WindowProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const [startMetrics, setStartMetrics] = useState({ mouseX: 0, mouseY: 0, windowX: 0, windowY: 0, width: 0, height: 0 });
   const TOP_NAV_HEIGHT = 48;
-  const MIN_SIZE = 200;
+  const MIN_SIZE = 600;
 
   const handleDragStart = (e: React.MouseEvent) => {
     if (isMaximized || isMobile) return;
@@ -61,18 +62,36 @@ export const Window: React.FC<WindowProps> = ({
       if (isDragging) {
         const deltaX = e.clientX - startMetrics.mouseX;
         const deltaY = e.clientY - startMetrics.mouseY;
-        setPosition({
-          x: startMetrics.windowX + deltaX,
-          y: startMetrics.windowY + deltaY,
-        });
+
+        // Початкові розрахункові координати
+        let newX = startMetrics.windowX + deltaX;
+        let newY = startMetrics.windowY + deltaY;
+
+        // 1. Обмеження по горизонталі (X)
+        const maxX = window.innerWidth - startMetrics.width;
+        newX = Math.max(0, Math.min(newX, maxX));
+
+        // 2. ОБМЕЖЕННЯ ПО ВЕРТИКАЛІ (Y) з урахуванням TOP_NAV_HEIGHT
+        const maxY = window.innerHeight - startMetrics.height;
+        
+        // Замість Math.max(0, ...) використовуємо TOP_NAV_HEIGHT
+        // Тепер вікно зупиниться рівно під панеллю
+        newY = Math.max(TOP_NAV_HEIGHT, Math.min(newY, maxY));
+
+        setPosition({ x: newX, y: newY });
       }
 
       if (isResizing) {
         const deltaX = e.clientX - startMetrics.mouseX;
         const deltaY = e.clientY - startMetrics.mouseY;
+        
+        // Обмежуємо розтягування, щоб не вилізти за межі екрана
+        const maxWidth = window.innerWidth - position.x;
+        const maxHeight = window.innerHeight - position.y;
+
         setSize({
-          width: Math.max(MIN_SIZE, startMetrics.width + deltaX),
-          height: Math.max(MIN_SIZE, startMetrics.height + deltaY),
+          width: Math.max(MIN_SIZE, Math.min(startMetrics.width + deltaX, maxWidth)),
+          height: Math.max(MIN_SIZE, Math.min(startMetrics.height + deltaY, maxHeight)),
         });
       }
     };
@@ -91,7 +110,7 @@ export const Window: React.FC<WindowProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, startMetrics]);
+  }, [isDragging, isResizing, startMetrics, position.x, position.y, TOP_NAV_HEIGHT]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);

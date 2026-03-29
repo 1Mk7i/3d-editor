@@ -6,8 +6,16 @@ import { Box, Typography, List, ListItem, ListItemText } from '@mui/material';
 export const AgentTab: React.FC = () => (
   <Box>
     <Typography variant="h6" gutterBottom>
-      AI Агент - Управління сценою голосовими командами
+      AI Агент - Управління сценою текстовими командами
     </Typography>
+    
+    <Box sx={{ mt: 3, textAlign: 'center' }}>
+      <img 
+        src="/assets/instructions/AgentTab/ChatLayaout.png" 
+        alt="AI Агент"
+        style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }}
+      />
+    </Box>
     
     <Typography variant="body1" paragraph>
       Режим агента дозволяє керувати 3D сценою через текстові команди. 
@@ -31,6 +39,14 @@ export const AgentTab: React.FC = () => (
         />
       </ListItem>
     </List>
+
+    <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>
+      <Typography variant="body2" sx={{ color: 'inherit' }}>
+        <strong>Порада:</strong> У режимі агента ви можете використовувати природну мову. 
+        Агент розуміє контекст та автоматично визначає, яку дію потрібно виконати. 
+        Для посилання на вибраний об'єкт використовуйте фрази типу "вибраний об'єкт" або "поточний об'єкт".
+      </Typography>
+    </Box>
 
     <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
       Доступні команди в режимі агента:
@@ -74,6 +90,14 @@ export const AgentTab: React.FC = () => (
       </ListItem>
     </List>
 
+    <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>
+      <Typography variant="body2" sx={{ color: 'inherit' }}>
+        <strong>Важливо:</strong> Агент повертає команди у форматі JSON. Якщо команда 
+        не розпізнана або містить помилки, вона не буде виконана. Перевірте правильність 
+        формулювання команди та спробуйте ще раз.
+      </Typography>
+    </Box>
+
     <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
       Доступні типи об'єктів:
     </Typography>
@@ -84,27 +108,19 @@ export const AgentTab: React.FC = () => (
       Кільце (ring), Труба (tube), Обертання (lathe), Капсула (capsule)
     </Typography>
 
-    <Box sx={{ mt: 3, textAlign: 'center' }}>
-      <img 
-        src="https://via.placeholder.com/600x300/CCCCCC/666666?text=AI+Агент" 
-        alt="AI Агент"
-        style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }}
-      />
-    </Box>
+    <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+      API ключ:
+    </Typography>
+    <Typography variant="body1" paragraph>
+      Для використання режиму агента необхідно ввести API ключ від Google AI Studio. 
+      Ви можете отримати його на сайті Google AI Studio після реєстрації та створення нового проекту. 
+      Введіть ключ у відповідне поле налаштувань, щоб активувати режим агента.
+    </Typography>
 
     <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>
       <Typography variant="body2" sx={{ color: 'inherit' }}>
-        <strong>Порада:</strong> У режимі агента ви можете використовувати природну мову. 
-        Агент розуміє контекст та автоматично визначає, яку дію потрібно виконати. 
-        Для посилання на вибраний об'єкт використовуйте фрази типу "вибраний об'єкт" або "поточний об'єкт".
-      </Typography>
-    </Box>
-
-    <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>
-      <Typography variant="body2" sx={{ color: 'inherit' }}>
-        <strong>Важливо:</strong> Агент повертає команди у форматі JSON. Якщо команда 
-        не розпізнана або містить помилки, вона не буде виконана. Перевірте правильність 
-        формулювання команди та спробуйте ще раз.
+        <strong>Порада:</strong> Перевірте чи ви справді скопіювали API ключ а не ID проекту.
+        На цьому етапі користувачі дуже часто роблять помилку.
       </Typography>
     </Box>
   </Box>
