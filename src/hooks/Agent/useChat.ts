@@ -63,7 +63,7 @@ export const useChat = (systemInstruction?: string, userApiKey?: string) => {
           connectionStatus: CONNECTION_STATUS.IDLE,
           messages: prev.messages.length === 0 ? [{
             id: 'welcome',
-            text: '👋 Вітаю! Будь ласка, введіть свій Gemini API Key у полі вище, щоб почати роботу з 3D сценою.',
+            text: '👋 Вітаю! Будь ласка, введіть свій Gemini API Key у полі вище, щоб почати роботу з 3D сценою. Отримати ключ можна в [Google AI Studio](https://aistudio.google.com/app/apikey).',
             sender: 'bot',
             timestamp: Date.now()
           }] : prev.messages

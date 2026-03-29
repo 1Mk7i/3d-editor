@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Window.css';
 import { WindowProps } from './types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 export const Window: React.FC<WindowProps> = ({
-  id,
   title,
   icon,
   isVisible,
@@ -19,11 +18,80 @@ export const Window: React.FC<WindowProps> = ({
   onFocus,
   zIndex = 1000,
 }) => {
-  const windowRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [isClosing, setIsClosing] = useState(false);
+  const [position, setPosition] = useState(initialPosition);
+  const [size, setSize] = useState(initialSize);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [startMetrics, setStartMetrics] = useState({ mouseX: 0, mouseY: 0, windowX: 0, windowY: 0, width: 0, height: 0 });
+  const TOP_NAV_HEIGHT = 48;
+  const MIN_SIZE = 200;
 
-  const TOP_NAV_HEIGHT = 48; 
+  const handleDragStart = (e: React.MouseEvent) => {
+    if (isMaximized || isMobile) return;
+    onFocus?.();
+    setIsDragging(true);
+    setStartMetrics({
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      windowX: position.x,
+      windowY: position.y,
+      width: size.width,
+      height: size.height,
+    });
+  };
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    setStartMetrics({
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      windowX: position.x,
+      windowY: position.y,
+      width: size.width,
+      height: size.height,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const deltaX = e.clientX - startMetrics.mouseX;
+        const deltaY = e.clientY - startMetrics.mouseY;
+        setPosition({
+          x: startMetrics.windowX + deltaX,
+          y: startMetrics.windowY + deltaY,
+        });
+      }
+
+      if (isResizing) {
+        const deltaX = e.clientX - startMetrics.mouseX;
+        const deltaY = e.clientY - startMetrics.mouseY;
+        setSize({
+          width: Math.max(MIN_SIZE, startMetrics.width + deltaX),
+          height: Math.max(MIN_SIZE, startMetrics.height + deltaY),
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    if (isDragging || isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, startMetrics]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -37,52 +105,39 @@ export const Window: React.FC<WindowProps> = ({
 
   const dynamicStyles: React.CSSProperties = isMobile ? {
     position: 'fixed',
-    top: `${TOP_NAV_HEIGHT}px`, 
+    top: `${TOP_NAV_HEIGHT}px`,
     left: 0,
     width: '100vw',
     height: `calc(100dvh - ${TOP_NAV_HEIGHT}px)`,
-    borderRadius: 0,
-    border: 'none',
     zIndex,
   } : {
     position: 'fixed',
-    left: isMaximized ? 0 : initialPosition.x,
-    top: isMaximized ? 0 : initialPosition.y,
-    width: isMaximized ? '100vw' : initialSize.width,
-    height: isMaximized ? '100vh' : initialSize.height,
+    left: isMaximized ? 0 : position.x,
+    top: isMaximized ? 0 : position.y,
+    width: isMaximized ? '100vw' : size.width,
+    height: isMaximized ? '100vh' : size.height,
     zIndex,
+    transition: isDragging || isResizing ? 'none' : 'all 0.2s ease-out',
   };
 
   return (
     <div
-      ref={windowRef}
       className={`kde-window ${isMobile ? 'mobile' : ''} ${isMaximized ? 'maximized' : ''} ${isClosing ? 'closing' : ''}`}
       style={dynamicStyles}
-      onClick={() => onFocus?.()}
+      onMouseDown={() => onFocus?.()}
     >
-      <div className="kde-window-titlebar">
+      <div 
+        className="kde-window-titlebar" 
+        onMouseDown={handleDragStart}
+        style={{ cursor: isMaximized ? 'default' : 'grab' }}
+      >
         <div className="kde-window-title">
           {icon && <span className="kde-window-icon">{icon}</span>}
           <span className="kde-window-title-text">{title}</span>
         </div>
-        
         <div className="kde-window-controls">
-          <button
-            className="kde-window-control close"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClose();
-            }}
-            title="Закрити"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path 
-                d="M3 3L9 9M9 3L3 9" 
-                stroke="currentColor" 
-                strokeWidth="1.2" 
-                strokeLinecap="round"
-              />
-            </svg>
+          <button className="kde-window-control close" onClick={handleClose}>
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
           </button>
         </div>
       </div>
@@ -90,8 +145,22 @@ export const Window: React.FC<WindowProps> = ({
       <div className="kde-window-content">
         {children}
       </div>
+
+      {!isMaximized && !isMobile && (
+        <div 
+          className="kde-window-resize-handle"
+          onMouseDown={handleResizeStart}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '15px',
+            height: '15px',
+            cursor: 'nwse-resize',
+            zIndex: 10,
+          }}
+        />
+      )}
     </div>
   );
 };
-
-export default Window;

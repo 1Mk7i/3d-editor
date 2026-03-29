@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { CollectionElementProps } from '@/components/UI/Collection/types';
-import { useClipboard, ClipboardType, ParameterSubType } from './useClipboard';
+import { useClipboard, ClipboardType, ParameterSubType } from '@/hooks/useClipboard';
 
 export function useSceneManager() {
   const [objects, setObjects] = useState<CollectionElementProps[]>([]);

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatPropsWithSceneManager } from './types';
 import { MessageBubble } from './MessageBubble';
-import { useChat } from '@/hooks/useChat';
+import { useChat } from '@/hooks/Agent/useChat';
 import { generateAgentPrompt, parseAgentCommand } from '@/shared/prompts/agentPrompt';
 import { CONNECTION_STATUS } from '@/shared/constants/gemini.constants';
 import {
@@ -128,7 +128,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
       
-      {/* Header: Режими та Статус */}
       <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', borderRadius: 0 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
           <Typography variant="subtitle1" fontWeight="bold">Gemini AI Workspace</Typography>
@@ -153,7 +152,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
         </Box>
       </Paper>
 
-      {/* Settings: API Key & Model */}
       <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <TextField
           label="Google API Key"
@@ -185,7 +183,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
         </FormControl>
       </Box>
 
-      {/* Messages: Область повідомлень */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {chatState.messages.map((msg) => (
           <MessageBubble
@@ -204,7 +201,6 @@ export const Chat: React.FC<ChatPropsWithSceneManager> = ({
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Footer: Поле введення */}
       <Paper elevation={3} sx={{ p: 2, borderTop: 1, borderColor: 'divider', borderRadius: 0 }}>
         {chatState.error && (
           <Alert severity="error" sx={{ mb: 1, py: 0 }} action={

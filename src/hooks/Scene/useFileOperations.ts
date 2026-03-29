@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useSceneManager } from '@/hooks/useSceneManager';
-import { FileOperation, FileFormat } from '../FileMenu/FileDialog';
+import { useSceneManager } from '@/hooks/Scene/useSceneManager';
+import { FileOperation, FileFormat } from '../../components/UI/Layaout/FileMenu/FileDialog';
 import {
     importFromJSON,
     createObjectFromData,

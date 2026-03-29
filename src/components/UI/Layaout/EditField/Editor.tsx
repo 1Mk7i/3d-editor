@@ -18,14 +18,14 @@ import { ObjectSelectorDialog } from '../ObjectSelector/ObjectSelectorDialog';
 // Hooks
 import { useContextMenu } from '@/hooks/useContextMenu';
 import { useWindowManager } from '@/hooks/useWindowManager';
-import { useSceneManager } from '@/hooks/useSceneManager';
+import { useSceneManager } from '@/hooks/Scene/useSceneManager';
 import { useSettings } from '@/hooks/useSettings';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useFullscreen } from '@/hooks/useFullscreen';
-import useSceneTree from '@/hooks/useSceneTree';
-import { useFileOperations } from './useFileOperations';
-import { useObjectUpdate } from './useObjectUpdate';
-import { useAgentCommands } from './useAgentCommands';
+import useSceneTree from '@/hooks/Scene/useSceneTree';
+import { useFileOperations } from '../../../../hooks/Scene/useFileOperations';
+import { useObjectUpdate } from '../../../../hooks/Scene/useObjectUpdate';
+import { useAgentCommands } from '../../../../hooks/Agent/useAgentCommands';
 
 // Config
 import { createContextMenuItems } from '@/config/contextMenuConfig';
