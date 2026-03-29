@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as THREE from 'three';
-import { useSceneManager } from '@/hooks/useSceneManager';
+import { useSceneManager } from '@/hooks/Scene/useSceneManager';
 import { AgentCommand } from '@/shared/prompts/agentPrompt';
 import { createThreeObject, THREE_OBJECT_TYPES } from '@/shared/constants/threeObjects';
 

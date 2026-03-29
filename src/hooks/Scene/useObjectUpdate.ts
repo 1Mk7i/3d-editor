@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as THREE from 'three';
-import { useSceneManager } from '@/hooks/useSceneManager';
+import { useSceneManager } from '@/hooks/Scene/useSceneManager';
 import { ThreeObjectType, createThreeObject } from '@/shared/constants/threeObjects';
 
 type ObjectUpdate = {
