@@ -57,13 +57,5 @@ export const GeneralInfoTab: React.FC = () => (
         перегляду та редагування їх властивостей.
       </Typography>
     </Box>
-
-    <Box sx={{ mt: 3, textAlign: 'center' }}>
-      <img 
-        src="https://via.placeholder.com/600x300/CCCCCC/666666?text=Головний+інтерфейс+додатку" 
-        alt="Головний інтерфейс"
-        style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }}
-      />
-    </Box>
   </Box>
 );

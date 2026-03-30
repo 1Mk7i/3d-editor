@@ -61,14 +61,6 @@ export const MouseTab: React.FC = () => (
       </ListItem>
     </List>
 
-    <Box sx={{ mt: 3, textAlign: 'center' }}>
-      <img 
-        src="https://via.placeholder.com/600x300/CCCCCC/666666?text=Керування+мишею" 
-        alt="Керування мишею"
-        style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }}
-      />
-    </Box>
-
     <Box sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>
       <Typography variant="body2" sx={{ color: 'inherit' }}>
         <strong>Порада:</strong> Використовуйте комбінацію різних дій мишею для 
