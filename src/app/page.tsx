@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress } from '@mui/material';
+import { TimerProvider } from '@/context/TimerContext';
 
 const Editor = dynamic(
   () => import('@/components/UI/Layaout/EditField/Editor'),
@@ -27,5 +28,9 @@ export default function Home() {
     return <div style={{ backgroundColor: '#1a1a1a', height: '100vh' }} />;
   }
 
-  return <Editor />;
+  return (
+    <TimerProvider>
+        <Editor />
+    </TimerProvider>
+  );
 }

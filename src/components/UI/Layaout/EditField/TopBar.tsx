@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { 
-    AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip, Box, useTheme 
+    AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip, Box, useTheme, Chip 
 } from '@mui/material';
 import { 
     Settings as SettingsIcon, 
@@ -19,6 +19,8 @@ import { ObjectSelectorMenu } from '../ObjectSelector/ObjectSelectorMenu';
 import { ThreeObjectType } from '@/shared/constants/threeObjects';
 import { WINDOW_CONFIG } from '@/config/editorConfig';
 
+import { useTimerContext } from '@/context/TimerContext';
+
 interface TopBarProps {
     isMobile: boolean;
     showRightMenu: boolean;
@@ -34,7 +36,6 @@ interface TopBarProps {
     handleSaveProject: () => void;
     setWorkshopDialogOpen: (open: boolean) => void;
     handleObjectSelect: (objectType: ThreeObjectType) => void;
-    isTimerRunning: boolean; 
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -51,11 +52,12 @@ export const TopBar: React.FC<TopBarProps> = ({
     handleFileMenuClick,
     handleSaveProject,
     setWorkshopDialogOpen,
-    handleObjectSelect,
-    isTimerRunning
+    handleObjectSelect
 }) => {
     const theme = useTheme();
     const [objectMenuAnchor, setObjectMenuAnchor] = useState<null | HTMLElement>(null);
+
+    const { isActive: isTimerActive, seconds, formatTime } = useTimerContext();
 
     return (
         <AppBar 
@@ -106,23 +108,30 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                 <Box sx={{ gap: 0.5, display: 'flex', alignItems: 'center' }}>
                     
-                    <Tooltip title={isTimerRunning ? "Таймер працює" : "Таймер сесії"}>
-                        <IconButton 
-                            onClick={() => handleOpenWindow('timer')}
-                            sx={{ 
-                                width: isMobile ? 36 : 32, 
-                                height: isMobile ? 36 : 32,
-                                color: isTimerRunning ? '#4caf50' : 'text.secondary',
-                                bgcolor: isTimerRunning ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
-                                transition: 'all 0.2s ease-in-out',
-                                '&:hover': { 
-                                    color: isTimerRunning ? '#66bb6a' : 'primary.main',
-                                    bgcolor: isTimerRunning ? 'rgba(76, 175, 80, 0.2)' : 'rgba(0, 0, 0, 0.04)'
-                                }
-                            }}
-                        >
-                            <TimerIcon fontSize={isMobile ? "medium" : "small"} />
-                        </IconButton>
+                    <Tooltip title={isTimerActive ? `Таймер запущено: ${formatTime(seconds)}` : "Таймер сесії"}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {isTimerActive && !isMobile && (
+                                <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 700, fontFamily: 'monospace' }}>
+                                    {formatTime(seconds).split(':').slice(1).join(':')}
+                                </Typography>
+                            )}
+                            <IconButton 
+                                onClick={() => handleOpenWindow('timer')}
+                                sx={{ 
+                                    width: isMobile ? 36 : 32, 
+                                    height: isMobile ? 36 : 32,
+                                    color: isTimerActive ? '#4caf50' : 'text.secondary',
+                                    bgcolor: isTimerActive ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+                                    transition: 'all 0.2s ease-in-out',
+                                    '&:hover': { 
+                                        color: isTimerActive ? '#66bb6a' : 'primary.main',
+                                        bgcolor: isTimerActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(0, 0, 0, 0.04)'
+                                    }
+                                }}
+                            >
+                                <TimerIcon fontSize={isMobile ? "medium" : "small"} />
+                            </IconButton>
+                        </Box>
                     </Tooltip>
 
                     {isSupported && (

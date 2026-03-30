@@ -134,7 +134,6 @@ const Editor: React.FC = () => {
                 handleSaveProject={handleSaveProject}
                 setWorkshopDialogOpen={setWorkshopDialogOpen}
                 handleObjectSelect={handleObjectSelect}
-                isTimerRunning={timer.isActive} 
             />
 
             <Workplace
@@ -195,7 +194,7 @@ const Editor: React.FC = () => {
                     {win.id === 'instructions' && <Instructions onClose={() => windowManager.closeWindow('instructions')} />}
                     
                     {win.id === 'timer' && (
-                        <Timer externalState={timer} />
+                        <Timer />
                     )}
                 </Window>
             ))}

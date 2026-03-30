@@ -16,12 +16,14 @@ import { CreationTab } from './Tabs/CreationTab';
 import { FileWorkTab } from './Tabs/FileWorkTab';
 import { SettingsTab } from './Tabs/SettingsTab';
 import { AgentTab } from './Tabs/AgentTab';
+import { TaskTab } from './Tabs/TaskTab';
 import {
   Help as HelpIcon,
   Mouse as MouseIcon,
   Settings as SettingsIcon,
   Category as CategoryIcon,
   Folder as FolderIcon,
+  TaskAlt as TaskAltIcon,
 } from '@mui/icons-material';
 
 export interface InstructionsProps {
@@ -38,6 +40,7 @@ export const Instructions: React.FC<InstructionsProps> = ({ onClose }) => {
     { label: 'Робота з файлами', icon: <FolderIcon />, component: <FileWorkTab /> },
     { label: 'Налаштування', icon: <SettingsIcon />, component: <SettingsTab /> },
     { label: 'AI Агент', icon: <HelpIcon />, component: <AgentTab /> },
+    { label: 'Завдання', icon: <TaskAltIcon />, component: <TaskTab /> },
   ];
 
   return (
