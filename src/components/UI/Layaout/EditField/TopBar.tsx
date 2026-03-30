@@ -5,12 +5,19 @@ import {
     AppBar, Toolbar, Typography, Button, Menu, MenuItem, IconButton, Tooltip, Box, useTheme 
 } from '@mui/material';
 import { 
-    Settings as SettingsIcon, SmartToy as AIIcon, Folder as FolderIcon, 
-    Category as CategoryIcon, Help as HelpIcon, Fullscreen as FullscreenIcon, 
-    FullscreenExit, ViewSidebar as SidebarIcon 
+    Settings as SettingsIcon, 
+    SmartToy as AIIcon, 
+    Folder as FolderIcon, 
+    Category as CategoryIcon, 
+    Help as HelpIcon, 
+    Fullscreen as FullscreenIcon, 
+    FullscreenExit, 
+    ViewSidebar as SidebarIcon,
+    Timer as TimerIcon 
 } from '@mui/icons-material';
 import { ObjectSelectorMenu } from '../ObjectSelector/ObjectSelectorMenu';
 import { ThreeObjectType } from '@/shared/constants/threeObjects';
+import { WINDOW_CONFIG } from '@/config/editorConfig';
 
 interface TopBarProps {
     isMobile: boolean;
@@ -19,7 +26,7 @@ interface TopBarProps {
     isFullscreen: boolean;
     isSupported: boolean;
     toggleFullscreen: () => void;
-    handleOpenWindow: (id: any) => void;
+    handleOpenWindow: (id: keyof typeof WINDOW_CONFIG) => void;
     fileMenuAnchor: HTMLElement | null;
     handleFileMenuOpen: (event: React.MouseEvent<HTMLButtonElement>) => void;
     handleFileMenuClose: () => void;
@@ -27,6 +34,7 @@ interface TopBarProps {
     handleSaveProject: () => void;
     setWorkshopDialogOpen: (open: boolean) => void;
     handleObjectSelect: (objectType: ThreeObjectType) => void;
+    isTimerRunning: boolean; 
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -43,7 +51,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     handleFileMenuClick,
     handleSaveProject,
     setWorkshopDialogOpen,
-    handleObjectSelect
+    handleObjectSelect,
+    isTimerRunning
 }) => {
     const theme = useTheme();
     const [objectMenuAnchor, setObjectMenuAnchor] = useState<null | HTMLElement>(null);
@@ -82,8 +91,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                     }}
                 />
 
-                <Button startIcon={<HelpIcon />} onClick={() => handleOpenWindow('instructions')} sx={{ color: 'text.primary' }}>
-                    Інструкція
+                <Button startIcon={<HelpIcon />} onClick={() => handleOpenWindow('instructions')} sx={{ color: 'text.primary', minWidth: isMobile ? 'auto' : '64px' }}>
+                    {!isMobile && "Інструкція"}
                 </Button>
                 
                 <Menu anchorEl={fileMenuAnchor} open={Boolean(fileMenuAnchor)} onClose={handleFileMenuClose}>
@@ -95,7 +104,27 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                 <Box sx={{ flexGrow: 1 }} />
 
-                <Box sx={{ gap: 0.3, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ gap: 0.5, display: 'flex', alignItems: 'center' }}>
+                    
+                    <Tooltip title={isTimerRunning ? "Таймер працює" : "Таймер сесії"}>
+                        <IconButton 
+                            onClick={() => handleOpenWindow('timer')}
+                            sx={{ 
+                                width: isMobile ? 36 : 32, 
+                                height: isMobile ? 36 : 32,
+                                color: isTimerRunning ? '#4caf50' : 'text.secondary',
+                                bgcolor: isTimerRunning ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+                                transition: 'all 0.2s ease-in-out',
+                                '&:hover': { 
+                                    color: isTimerRunning ? '#66bb6a' : 'primary.main',
+                                    bgcolor: isTimerRunning ? 'rgba(76, 175, 80, 0.2)' : 'rgba(0, 0, 0, 0.04)'
+                                }
+                            }}
+                        >
+                            <TimerIcon fontSize={isMobile ? "medium" : "small"} />
+                        </IconButton>
+                    </Tooltip>
+
                     {isSupported && (
                         <IconButton 
                             onClick={toggleFullscreen}
@@ -125,7 +154,11 @@ export const TopBar: React.FC<TopBarProps> = ({
 
                     <IconButton 
                         onClick={() => handleOpenWindow('settings')}
-                        sx={{ width: isMobile ? 36 : 32, height: isMobile ? 36 : 32 }}
+                        sx={{ 
+                            width: isMobile ? 36 : 32, 
+                            height: isMobile ? 36 : 32,
+                            color: 'text.secondary'
+                        }}
                     >
                         <SettingsIcon fontSize={isMobile ? "medium" : "small"} />
                     </IconButton>
@@ -139,7 +172,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                             ml: 0.5, 
                             px: isMobile ? 1 : 2, 
                             minWidth: isMobile ? 'auto' : '80px',
-                            fontSize: isMobile ? '0.75rem' : '0.875rem'
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
+                            textTransform: 'none',
+                            borderRadius: '6px'
                         }}
                     >
                         {isMobile ? "AI" : "AI Chat"}

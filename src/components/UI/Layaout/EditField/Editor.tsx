@@ -14,6 +14,7 @@ import { Instructions } from '@/components/UI/Layaout/Instructions/InstructionsL
 import { FileDialog } from '../FileMenu/FileDialog';
 import { WorkshopDialog } from '../FileMenu/WorkshopDialog';
 import { ObjectSelectorDialog } from '../ObjectSelector/ObjectSelectorDialog';
+import { Timer } from '@/components/UI/Layaout/Timer/Timer';
 
 // Hooks
 import { useContextMenu } from '@/hooks/useContextMenu';
@@ -26,6 +27,7 @@ import useSceneTree from '@/hooks/Scene/useSceneTree';
 import { useFileOperations } from '../../../../hooks/Scene/useFileOperations';
 import { useObjectUpdate } from '../../../../hooks/Scene/useObjectUpdate';
 import { useAgentCommands } from '../../../../hooks/Agent/useAgentCommands';
+import { useTimer } from '@/hooks/useTimer';
 
 // Config
 import { createContextMenuItems } from '@/config/contextMenuConfig';
@@ -33,9 +35,9 @@ import { WINDOW_CONFIG } from '@/config/editorConfig';
 
 const Editor: React.FC = () => {
     const isMobile = useIsMobile();
-    const { settings } = useSettings();
-    
-    // Деструктуризація хука Fullscreen
+    const { settings } = useSettings();    
+    const timer = useTimer();
+
     const { isFullscreen, isSupported, toggleFullscreen } = useFullscreen();
 
     const contextMenu = useContextMenu();
@@ -132,6 +134,7 @@ const Editor: React.FC = () => {
                 handleSaveProject={handleSaveProject}
                 setWorkshopDialogOpen={setWorkshopDialogOpen}
                 handleObjectSelect={handleObjectSelect}
+                isTimerRunning={timer.isActive} 
             />
 
             <Workplace
@@ -178,6 +181,7 @@ const Editor: React.FC = () => {
                     {...win} 
                     title={WINDOW_CONFIG[win.id as keyof typeof WINDOW_CONFIG]?.title || 'Вікно'} 
                     onClose={() => windowManager.closeWindow(win.id)}
+                    onFocus={() => windowManager.focusWindow(win.id)}
                 >
                     {win.id === 'settings' && <Settings onClose={() => windowManager.closeWindow('settings')} />}
                     {win.id === 'chat' && (
@@ -189,6 +193,10 @@ const Editor: React.FC = () => {
                         />
                     )}
                     {win.id === 'instructions' && <Instructions onClose={() => windowManager.closeWindow('instructions')} />}
+                    
+                    {win.id === 'timer' && (
+                        <Timer externalState={timer} />
+                    )}
                 </Window>
             ))}
         </Box>
