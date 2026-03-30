@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import {
   Box,
@@ -17,6 +17,9 @@ import {
   RotateRight as RotateIcon,
   AspectRatio as ScaleIcon,
 } from '@mui/icons-material';
+
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { is } from '@react-three/fiber/dist/declarations/src/core/utils';
 
 interface LeftMenuProps {
     isEditMode: boolean;
@@ -41,14 +44,22 @@ const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMen
         onSetTransformMode('scale');
     }, [onSetTransformMode]);
 
+    let BUTTON_SIZE = 36;
+    const isMobile = useIsMobile();
+
+    useEffect(() => {
+        BUTTON_SIZE = isMobile ? 36 : 64;
+    }, [isMobile]);
+
+
     return (
         <>
             <Tooltip title="Переміщення">
                 <IconButton
                     onClick={handleTranslate}
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: BUTTON_SIZE,
+                        height: BUTTON_SIZE,
                         bgcolor: 'background.paper',
                         '&:hover': { bgcolor: 'action.hover' },
                         '&:active': { transform: 'scale(0.95)' },
@@ -61,8 +72,8 @@ const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMen
                 <IconButton
                     onClick={handleRotate}
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: BUTTON_SIZE,
+                        height: BUTTON_SIZE,
                         bgcolor: 'background.paper',
                         '&:hover': { bgcolor: 'action.hover' },
                         '&:active': { transform: 'scale(0.95)' },
@@ -75,8 +86,8 @@ const TransformControls = ({ onSetTransformMode }: { onSetTransformMode: LeftMen
                 <IconButton
                     onClick={handleScale}
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: BUTTON_SIZE,
+                        height: BUTTON_SIZE,
                         bgcolor: 'background.paper',
                         '&:hover': { bgcolor: 'action.hover' },
                         '&:active': { transform: 'scale(0.95)' },
@@ -132,8 +143,8 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
                     onClick={handleAddObject}
                     color="primary"
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: 48,
+                        height: 48,
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
                         '&:hover': { bgcolor: 'primary.dark' },
@@ -153,8 +164,8 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
                             onClick={onToggleEditMode}
                             color={isEditMode ? 'success' : 'default'}
                             sx={{
-                                width: 56,
-                                height: 56,
+                                width: 48,
+                                height: 48,
                                 bgcolor: isEditMode ? 'success.main' : 'background.default',
                                 color: isEditMode ? 'success.contrastText' : 'text.primary',
                                 '&:hover': {
@@ -183,8 +194,8 @@ export const LeftMenu: React.FC<LeftMenuProps> = ({
                     onClick={handleRemoveObject}
                     disabled={!selectedObjectId}
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: 48,
+                        height: 48,
                         bgcolor: 'error.main',
                         color: 'error.contrastText',
                         '&:hover': { bgcolor: 'error.dark' },
