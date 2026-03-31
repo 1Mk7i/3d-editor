@@ -214,7 +214,7 @@ export const TaskTab: React.FC = () => {
           alt="Кнопка експорту звіту"
         />
         <Typography variant="subtitle1" gutterBottom>
-          Зберегти файл у зручному місці на комп'ютері.
+          Зберегти файл у зручному місці на комп'ютері. (цей пк/all/!-TEST/)
         </Typography>
       </Box>
 
